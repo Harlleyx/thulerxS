@@ -24,6 +24,7 @@ let products = [];
 let cart = [];
 let currentCategory = 'todas';
 let searchQuery = '';
+let sortOrder = 'default'; // NOVO: controla a ordenação da vitrine de produtos
 let activeChatId = localStorage.getItem('thulerx_chat_id') || null;
 let unsubscribeMessages = null;
 let chatStatusUnsubscribe = null;
@@ -168,6 +169,35 @@ window.handleSearch = function(e) {
     renderProducts();
 };
 
+// NOVO: ordenação da vitrine (preço maior/menor, nome A-Z etc)
+window.handleSortChange = function(e) {
+    sortOrder = e.target.value;
+    renderProducts();
+};
+
+function applySortOrder(list) {
+    const sorted = [...list];
+
+    switch (sortOrder) {
+        case 'price-asc':
+            sorted.sort((a, b) => a.price - b.price);
+            break;
+        case 'price-desc':
+            sorted.sort((a, b) => b.price - a.price);
+            break;
+        case 'name-asc':
+            sorted.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+            break;
+        case 'name-desc':
+            sorted.sort((a, b) => b.name.localeCompare(a.name, 'pt-BR'));
+            break;
+        default:
+            break; // 'default' mantém a ordem original vinda do Firestore
+    }
+
+    return sorted;
+}
+
 function renderProducts() {
     const grid = document.getElementById('product-grid');
     if (!grid) return;
@@ -178,6 +208,8 @@ function renderProducts() {
         const matchesSearch = p.name.toLowerCase().includes(searchQuery);
         return matchesCategory && matchesSearch;
     });
+
+    filtered = applySortOrder(filtered); // NOVO: aplica a ordenação escolhida
 
     if (filtered.length === 0) {
         grid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-400 text-sm">Nenhum produto encontrado com os filtros selecionados.</div>`;

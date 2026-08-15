@@ -281,8 +281,17 @@
                 pinnedItems.innerHTML = items.map(i => {
                     const qty = i.quantity || 1;
                     const total = (i.price * qty).toFixed(2).replace('.', ',');
-                    return `• <b>${i.name}</b> (x${qty}) - R$ ${total}`;
-                }).join('<br>');
+                    return `
+                        <div class="flex items-center justify-between gap-2">
+                            <span>• <b>${i.name}</b> (x${qty}) - R$ ${total}</span>
+                            <button
+                                id="baixar-estoque-${chatId}-${i.id}"
+                                onclick="window.baixarEstoqueDoItem('${i.id}', ${qty}, '${chatId}-${i.id}')"
+                                class="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] px-2 py-1 rounded-lg font-semibold whitespace-nowrap"
+                            >Baixar estoque</button>
+                        </div>
+                    `;
+                }).join('');
                 pinnedInfo.classList.remove('hidden');
             } else {
                 pinnedItems.innerHTML = 'Nenhum item registrado para este chat.';
@@ -384,6 +393,36 @@
             document.getElementById('pinned-proof-info').classList.add('hidden');
             document.getElementById('active-chat-header').innerHTML = `<span class="text-xs text-slate-400 font-medium">Selecione um chat ao lado para conversar</span>`;
         }
+
+        // Chamado pelo botão "Baixar estoque" dentro do pedido do cliente,
+        // depois que a equipe já conferiu o comprovante manualmente.
+        window.baixarEstoqueDoItem = async function(productId, qty, buttonKey) {
+            const btn = document.getElementById(`baixar-estoque-${buttonKey}`);
+
+            try {
+                const productRef = doc(db, "products", String(productId));
+                const productSnap = await getDoc(productRef);
+
+                if (!productSnap.exists()) {
+                    alert("Produto não encontrado no banco de dados.");
+                    return;
+                }
+
+                const currentStock = productSnap.data().stock || 0;
+                const newStock = Math.max(0, currentStock - qty);
+                await updateDoc(productRef, { stock: newStock });
+
+                if (btn) {
+                    btn.textContent = "Estoque baixado ✓";
+                    btn.disabled = true;
+                    btn.classList.remove('bg-emerald-600', 'hover:bg-emerald-500');
+                    btn.classList.add('bg-slate-700', 'cursor-not-allowed');
+                }
+            } catch (error) {
+                console.error("Erro ao baixar estoque:", error);
+                alert("Erro ao baixar estoque: " + error.message);
+            }
+        };
 
         function loadTeamChat() {
             const container = document.getElementById('team-chat-container');

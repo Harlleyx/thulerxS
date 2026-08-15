@@ -121,30 +121,6 @@
 </head>
 <body class="bg-black text-black-100 min-h-screen flex flex-col justify-between selection:bg-black-1000 selection:text-white antialiased">
 
-    <!-- Tela de Manutenção (controlada pela Equipe via Painel/Firestore) -->
-    <div id="maintenance-screen" class="fixed inset-0 z-[100] bg-slate-950 flex flex-col items-center justify-center hidden p-6 text-center overflow-hidden">
-        <!-- Efeito de Fundo Animado/Brilho -->
-        <div class="absolute -top-40 -left-40 w-96 h-96 bg-blue-600/20 rounded-full blur-[128px] pointer-events-none animate-pulse"></div>
-        <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-indigo-600/20 rounded-full blur-[128px] pointer-events-none animate-pulse" style="animation-delay: 1s;"></div>
-        <div class="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px] opacity-30 pointer-events-none"></div>
-
-        <div class="relative z-10 max-w-md space-y-6 bg-slate-900/80 border border-slate-800 p-8 rounded-3xl backdrop-blur-xl shadow-2xl">
-            <div class="w-16 h-16 bg-blue-600/10 border border-blue-500/30 rounded-2xl flex items-center justify-center mx-auto text-3xl">
-                🛠️
-            </div>
-            <div class="space-y-2">
-                <h1 class="text-2xl font-black text-white tracking-tight uppercase">Site em Manutenção</h1>
-                <p class="text-xs text-slate-400 leading-relaxed">
-                    Estamos realizando atualizações e melhorias na loja para te atender melhor. Voltaremos em breve!
-                </p>
-            </div>
-            <div class="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[11px] font-bold px-4 py-2 rounded-full">
-                <span class="w-2 h-2 rounded-full bg-blue-500 animate-ping"></span>
-                Atualização em andamento
-            </div>
-        </div>
-    </div>
-
     <!-- Container do Toast (Notificações Flutuantes) -->
     <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 

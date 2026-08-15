@@ -306,7 +306,7 @@
 
 <!-- Modal Checkout / Pix / Chat -->
 <div id="checkout-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="tx-modal-panel bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 flex flex-col h-[540px]">
+    <div class="tx-modal-panel bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 flex flex-col h-[620px] max-h-[92vh]">
         <div class="flex justify-between items-center pb-3 border-b border-slate-800 mb-4">
             <h3 class="font-bold text-sm text-blue-400 uppercase tracking-wider">Pagamento & Suporte</h3>
             <button onclick="closeCheckout()" class="text-slate-400 hover:text-white">✕</button>
@@ -315,8 +315,8 @@
         <!-- Seção de Pagamento Pix -->
         <div id="pix-section" class="flex-1 flex flex-col justify-center items-center space-y-4 text-center">
             <p class="text-xs text-slate-300">Copie a chave Pix abaixo ou escaneie o código:</p>
-            <div class="bg-white p-3 rounded-2xl">
-                <img src="https://via.placeholder.com/150/000000/FFFFFF?text=QR+Code+Pix" alt="QR Code" class="w-32 h-32">
+            <div class="bg-white p-4 rounded-2xl">
+                <img src="https://via.placeholder.com/150/000000/FFFFFF?text=QR+Code+Pix" alt="QR Code" class="w-52 h-52">
             </div>
             <div class="w-full max-w-xs flex gap-2">
                 <input type="text" id="pix-key" readonly value="00020126580014br.gov.bcb.pix..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-[10px] text-slate-300">

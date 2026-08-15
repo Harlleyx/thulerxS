@@ -519,12 +519,12 @@
 
         <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-1.5">
-                <button id="ncs-prev" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700/80 text-slate-200 text-[11px] flex items-center justify-center transition active:scale-95" title="Faixa anterior"><img src="./volta.png"></button>
-                <button id="ncs-playpause" class="w-8 h-8 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs flex items-center justify-center transition active:scale-95 shadow-lg shadow-blue-600/20" title="Play/Pausa"><img src="./play.png"></button>
-                <button id="ncs-next" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700/80 text-slate-200 text-[11px] flex items-center justify-center transition active:scale-95" title="Próxima faixa"><img src="./avanca.png"</button>
+                <button id="ncs-prev" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700/80 text-slate-200 text-[11px] flex items-center justify-center transition active:scale-95" title="Faixa anterior"><img src="/prev.png" width="12" alt="Anterior"></button>
+                <button id="ncs-playpause" class="w-8 h-8 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs flex items-center justify-center transition active:scale-95 shadow-lg shadow-blue-600/20" title="Play/Pausa"><img id="ncs-playpause-icon" src="/play.png" width="14" alt="Play/Pausa"></button>
+                <button id="ncs-next" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700/80 text-slate-200 text-[11px] flex items-center justify-center transition active:scale-95" title="Próxima faixa"><img src="/next.png" width="12" alt="Próxima"></button>
             </div>
             <div class="flex items-center gap-1.5">
-                <button id="ncs-mute" class="text-slate-400 hover:text-white text-[11px]" title="Mudo/Ativar som"><img src="./mute.png"></button>
+                <button id="ncs-mute" class="text-slate-400 hover:text-white text-[11px]" title="Mudo/Ativar som"><img id="ncs-mute-icon" src="/volume.png" width="14" alt="Volume"></button>
                 <input type="range" id="ncs-volume" min="0" max="1" step="0.01" value="0.6" title="Volume">
             </div>
         </div>
@@ -688,6 +688,8 @@
             const disc = document.getElementById('ncs-disc');
             const progressBar = document.getElementById('ncs-progress-bar');
             const progressFill = document.getElementById('ncs-progress-fill');
+            const playPauseIcon = document.getElementById('ncs-playpause-icon');
+            const muteIcon = document.getElementById('ncs-mute-icon');
 
             if (!audio || !player || !playlist.length) return;
 
@@ -697,6 +699,7 @@
             const savedVolume = parseFloat(localStorage.getItem('ncsVolume'));
             audio.volume = isNaN(savedVolume) ? 0.6 : savedVolume;
             volumeSlider.value = audio.volume;
+            if (muteIcon) muteIcon.src = audio.volume === 0 ? '/mute.png' : '/volume.png';
 
             function loadTrack(index, autoplay) {
                 currentIndex = (index + playlist.length) % playlist.length;
@@ -710,7 +713,7 @@
             }
 
             function setPlayingUI(isPlaying) {
-                playPauseBtn.textContent = isPlaying ? '⏸' : '▶';
+                if (playPauseIcon) playPauseIcon.src = isPlaying ? '/pause.png' : '/play.png';
                 disc.classList.toggle('is-spinning', isPlaying);
             }
 
@@ -745,13 +748,13 @@
             volumeSlider.addEventListener('input', () => {
                 audio.volume = parseFloat(volumeSlider.value);
                 audio.muted = false;
-                muteBtn.textContent = audio.volume === 0 ? '🔇' : '🔊';
+                if (muteIcon) muteIcon.src = audio.volume === 0 ? '/mute.png' : '/volume.png';
                 localStorage.setItem('ncsVolume', String(audio.volume));
             });
 
             muteBtn.addEventListener('click', () => {
                 audio.muted = !audio.muted;
-                muteBtn.textContent = audio.muted ? '🔇' : '🔊';
+                if (muteIcon) muteIcon.src = audio.muted ? '/mute.png' : '/volume.png';
             });
 
             function setCollapsed(collapsed) {

@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel da Equipe - Thulerx</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between font-sans antialiased">
+
+    <!-- TELA DE LOGIN COM GOOGLE -->
+    <div id="login-screen" class="flex flex-col items-center justify-center flex-1 p-4">
+        <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl w-full max-w-md shadow-2xl text-center space-y-6">
+            <div class="w-14 h-14 bg-blue-600/10 border border-blue-500/20 rounded-2xl flex items-center justify-center mx-auto text-2xl">
+                🔐
+            </div>
+            <div>
+                <h2 class="text-xl font-bold text-blue-500">Equipe Thulerx</h2>
+                <p class="text-xs text-slate-400 mt-1">Acesso restrito para membros e suporte. Entre com sua conta Google.</p>
+            </div>
+
+            <button onclick="loginWithGoogle()" class="w-full bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-bold text-xs py-3.5 px-4 rounded-xl transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-3">
+                <svg class="w-4 h-4 bg-white rounded-full p-0.5" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                </svg>
+                <span>Entrar com Google</span>
+            </button>
+
+            <div class="pt-4 border-t border-slate-800">
+                <a href="index.html" class="text-xs text-slate-500 hover:text-slate-400 transition font-medium">← Voltar para a Loja</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- DASHBOARD DA EQUIPE -->
+    <div id="dashboard-screen" class="hidden flex-1 flex flex-col p-4 max-w-7xl mx-auto w-full">
+        <header class="flex flex-wrap justify-between items-center bg-slate-900 border border-slate-800 p-4 rounded-xl mb-4 gap-3">
+            <div>
+                <h1 class="font-bold text-sm text-blue-400">Painel de Atendimento e Equipe</h1>
+                <p class="text-[10px] text-slate-400">Logado como: <span id="logged-user-email" class="text-slate-200"></span></p>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 bg-slate-800/60 border border-slate-700/60 pl-3 pr-2.5 py-1.5 rounded-lg">
+                    <span class="text-[11px] font-semibold text-slate-300 uppercase tracking-wide">Manutenção</span>
+                    <button
+                        onclick="toggleMaintenance()"
+                        id="btn-maint"
+                        type="button"
+                        role="switch"
+                        aria-checked="false"
+                        title="Ativar/Desativar Modo Manutenção do site"
+                        class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full bg-slate-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                    >
+                        <span id="maint-knob" class="inline-block h-4 w-4 translate-x-1 transform rounded-full bg-white shadow-md transition-transform duration-300"></span>
+                    </button>
+                    <span id="maint-text" class="w-6 text-[10px] font-black text-slate-500">OFF</span>
+                </div>
+                <button onclick="logoutTeam()" class="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 px-3 py-1.5 rounded-lg text-xs font-semibold transition">Sair</button>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1">
+            <!-- Coluna 1: Chats Ativos -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col h-[550px]">
+                <h3 class="font-bold text-xs text-slate-200 uppercase tracking-wider mb-3 pb-2 border-b border-slate-800">Chats de Clientes Ativos</h3>
+                <div id="chats-list" class="flex-1 overflow-y-auto space-y-2 pr-1"></div>
+            </div>
+
+            <!-- Coluna 2: Chat Selecionado -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col h-[550px]">
+                <div class="flex justify-between items-center pb-2 border-b border-slate-800 mb-3">
+                    <div id="active-chat-header">
+                        <span class="text-xs text-slate-400 font-medium">Selecione um chat ao lado para conversar</span>
+                    </div>
+                    <div id="chat-actions" class="hidden flex gap-1.5">
+                        <button onclick="cancelOrder()" class="text-[10px] bg-amber-600 hover:bg-amber-500 text-white px-2 py-1 rounded transition">Cancelar Pedido</button>
+                        <button onclick="closeActiveChat()" class="text-[10px] bg-red-600 hover:bg-red-500 text-white px-2 py-1 rounded transition">Encerrar Chat</button>
+                    </div>
+                </div>
+
+                <!-- Detalhes do Pedido do Cliente Fixado -->
+                <div id="pinned-purchase-info" class="bg-blue-950/40 border border-blue-800/50 p-2.5 rounded-lg mb-3 hidden">
+                    <span class="text-[10px] font-bold text-blue-400 uppercase tracking-wider block mb-1">🛒 Compras do Cliente:</span>
+                    <div id="pinned-purchase-items" class="text-xs text-slate-200 space-y-1"></div>
+                </div>
+
+                <!-- Comprovante de Pagamento Fixado -->
+                <div id="pinned-proof-info" class="bg-emerald-950/40 border border-emerald-800/50 p-2.5 rounded-lg mb-3 hidden">
+                    <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block mb-1">📎 Comprovante de Pagamento:</span>
+                    <a id="pinned-proof-link" href="#" target="_blank" rel="noopener noreferrer" class="text-xs text-emerald-300 underline break-all hover:text-emerald-200"></a>
+                </div>
+
+                <div id="team-chat-messages" class="flex-1 overflow-y-auto space-y-2 pr-1 mb-3 flex flex-col">
+                    <p class="text-slate-500 text-center my-auto text-xs">Nenhuma conversa selecionada.</p>
+                </div>
+
+                <div id="team-chat-controls" class="hidden flex gap-2">
+                    <input type="text" id="team-message-input" onkeypress="handleTeamKeypress(event)" placeholder="Responder ao cliente..." class="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    <button onclick="sendTeamMessage()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-semibold transition">Enviar</button>
+                </div>
+            </div>
+
+            <!-- Coluna 3: Chat Interno -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col h-[550px]">
+                <h3 class="font-bold text-xs text-slate-200 uppercase tracking-wider mb-3 pb-2 border-b border-slate-800">Chat Interno da Equipe</h3>
+                <div id="team-chat-container" class="flex-1 overflow-y-auto space-y-2 pr-1 mb-3 flex flex-col">
+                    <p class="text-slate-500 text-center text-xs my-auto">Carregando chat da equipe...</p>
+                </div>
+                <div class="flex gap-2">
+                    <input type="text" id="team-internal-message-input" onkeypress="handleTeamInternalKeypress(event)" placeholder="Digite para a equipe..." class="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    <button onclick="sendTeamInternalMessage()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-semibold transition">Enviar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT FIREBASE -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, doc, getDoc, setDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDjzc-lFAujv5s3A5LHR23qPKXN90exAJw",
+            authDomain: "thulerx-store.firebaseapp.com",
+            projectId: "thulerx-store",
+            storageBucket: "thulerx-store.firebasestorage.app",
+            messagingSenderId: "930067642720",
+            appId: "1:930067642720:web:5c4281e9b99fc3714e4605"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const googleProvider = new GoogleAuthProvider();
+
+        const ALLOWED_EMAILS = [
+            "thulerxleklek@gmail.com"
+        ];
+
+        let currentActiveChatId = null;
+        let teamUnsubscribeMessages = null;
+        let chatsUnsubscribe = null;
+        let teamChatUnsubscribe = null;
+
+        onAuthStateChanged(auth, async (user) => {
+            const loginScreen = document.getElementById('login-screen');
+            const dashboardScreen = document.getElementById('dashboard-screen');
+            
+            if (user) {
+                const userEmail = user.email ? user.email.toLowerCase() : "";
+
+                if (ALLOWED_EMAILS.includes(userEmail)) {
+                    if (loginScreen) loginScreen.classList.add('hidden');
+                    if (dashboardScreen) dashboardScreen.classList.remove('hidden');
+                    
+                    const userEmailElem = document.getElementById('logged-user-email');
+                    if (userEmailElem) userEmailElem.textContent = user.email;
+
+                    loadActiveChatsList();
+                    loadTeamChat();
+                    listenMaintenanceState();
+                } else {
+                    alert(`Acesso Negado: A conta (${user.email}) não possui permissão para acessar o Painel.`);
+                    await signOut(auth);
+                    if (dashboardScreen) dashboardScreen.classList.add('hidden');
+                    if (loginScreen) loginScreen.classList.remove('hidden');
+                }
+            } else {
+                if (dashboardScreen) dashboardScreen.classList.add('hidden');
+                if (loginScreen) loginScreen.classList.remove('hidden');
+            }
+        });
+
+        window.loginWithGoogle = async function() {
+            try {
+                await signInWithPopup(auth, googleProvider);
+            } catch (error) {
+                console.error("Erro ao fazer login:", error);
+                alert("Erro ao realizar login.");
+            }
+        };
+
+        window.logoutTeam = async function() {
+            try {
+                if (chatsUnsubscribe) chatsUnsubscribe();
+                if (teamUnsubscribeMessages) teamUnsubscribeMessages();
+                if (teamChatUnsubscribe) teamChatUnsubscribe();
+                await signOut(auth);
+            } catch (error) {
+                console.error("Erro ao sair:", error);
+            }
+        };
+
+        // Alternar modo de manutenção no site
+        window.toggleMaintenance = async function() {
+            const maintRef = doc(db, "system_settings", "maintenance");
+            const snap = await getDoc(maintRef);
+            const current = snap.exists() ? snap.data().active : false;
+            const newState = !current;
+
+            if (confirm(`Deseja ${newState ? 'ATIVAR' : 'DESATIVAR'} o Modo Manutenção no site?`)) {
+                await setDoc(maintRef, { active: newState }, { merge: true });
+                alert(`Modo Manutenção ${newState ? 'Ativado' : 'Desativado'}!`);
+            }
+        };
+
+        function listenMaintenanceState() {
+            onSnapshot(doc(db, "system_settings", "maintenance"), (snap) => {
+                const active = snap.exists() && snap.data().active;
+                const track = document.getElementById('btn-maint');
+                const knob = document.getElementById('maint-knob');
+                const txt = document.getElementById('maint-text');
+
+                if (track) {
+                    track.setAttribute('aria-checked', active ? 'true' : 'false');
+                    track.classList.toggle('bg-amber-500', active);
+                    track.classList.toggle('bg-slate-700', !active);
+                }
+                if (knob) {
+                    knob.classList.toggle('translate-x-1', !active);
+                    knob.classList.toggle('translate-x-6', active);
+                }
+                if (txt) {
+                    txt.textContent = active ? 'ON' : 'OFF';
+                    txt.classList.toggle('text-amber-400', active);
+                    txt.classList.toggle('text-slate-500', !active);
+                }
+            });
+        }
+
+        function loadActiveChatsList() {
+            const chatsRef = collection(db, "chats");
+            chatsUnsubscribe = onSnapshot(chatsRef, (snapshot) => {
+                const listDiv = document.getElementById('chats-list');
+                if (!listDiv) return;
+                listDiv.innerHTML = '';
+
+                const activeChats = snapshot.docs.filter(doc => doc.data().status === 'active');
+
+                if (activeChats.length === 0) {
+                    listDiv.innerHTML = `<p class="text-xs text-slate-500 text-center mt-10">Nenhum chat aberto no momento.</p>`;
+                    return;
+                }
+
+                activeChats.forEach((docSnap) => {
+                    const chatId = docSnap.id;
+                    const isSelected = currentActiveChatId === chatId;
+
+                    listDiv.innerHTML += `
+                        <div onclick="window.selectChat('${chatId}')" class="p-3 rounded-lg cursor-pointer border transition text-xs ${isSelected ? 'bg-blue-600/20 border-blue-500 text-slate-100' : 'bg-slate-900 border-slate-700 hover:border-slate-600 text-slate-300'}">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="font-bold text-blue-400">Cliente ID: ${chatId.substring(0, 6)}...</span>
+                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            </div>
+                            <p class="text-[10px] text-slate-400">Clique para abrir atendimento</p>
+                        </div>
+                    `;
+                });
+            });
+        }
+
+        window.selectChat = async function(chatId) {
+            currentActiveChatId = chatId;
+            
+            const chatSnap = await getDoc(doc(db, "chats", chatId));
+            const pinnedInfo = document.getElementById('pinned-purchase-info');
+            const pinnedItems = document.getElementById('pinned-purchase-items');
+            const pinnedProofInfo = document.getElementById('pinned-proof-info');
+            const pinnedProofLink = document.getElementById('pinned-proof-link');
+
+            // O campo salvo pelo cliente (em app.js, dentro de confirmPayment)
+            // se chama "items", e não "itemsPurchased". Também formata preço e quantidade.
+            if (chatSnap.exists() && Array.isArray(chatSnap.data().items) && chatSnap.data().items.length > 0) {
+                const items = chatSnap.data().items;
+                pinnedItems.innerHTML = items.map(i => {
+                    const qty = i.quantity || 1;
+                    const total = (i.price * qty).toFixed(2).replace('.', ',');
+                    return `• <b>${i.name}</b> (x${qty}) - R$ ${total}`;
+                }).join('<br>');
+                pinnedInfo.classList.remove('hidden');
+            } else {
+                pinnedItems.innerHTML = 'Nenhum item registrado para este chat.';
+                pinnedInfo.classList.remove('hidden');
+            }
+
+            // Mostra o link do comprovante, se existir
+            const proofLink = chatSnap.exists() ? chatSnap.data().proofLink : null;
+            if (proofLink) {
+                pinnedProofLink.href = proofLink;
+                pinnedProofLink.textContent = proofLink;
+                pinnedProofInfo.classList.remove('hidden');
+            } else {
+                pinnedProofInfo.classList.add('hidden');
+            }
+
+            document.getElementById('team-chat-controls').classList.remove('hidden');
+            document.getElementById('chat-actions').classList.remove('hidden');
+            document.getElementById('active-chat-header').innerHTML = `<span class="text-xs text-blue-400 font-bold">Atendendo: ${chatId.substring(0, 8)}...</span>`;
+
+            loadTeamMessages(chatId);
+            loadActiveChatsList();
+        };
+
+        function loadTeamMessages(chatId) {
+            const messagesRef = collection(db, "chats", chatId, "messages");
+            const q = query(messagesRef, orderBy("timestamp", "asc"));
+
+            if (teamUnsubscribeMessages) teamUnsubscribeMessages();
+
+            teamUnsubscribeMessages = onSnapshot(q, (snapshot) => {
+                const messagesDiv = document.getElementById('team-chat-messages');
+                if (!messagesDiv) return;
+                messagesDiv.innerHTML = '';
+
+                if (snapshot.empty) {
+                    messagesDiv.innerHTML = `<p class="text-slate-500 text-center my-auto text-xs">Nenhuma mensagem nesta conversa ainda.</p>`;
+                    return;
+                }
+
+                snapshot.forEach((docSnap) => {
+                    const msg = docSnap.data();
+                    const isTeam = msg.sender === 'team';
+                    messagesDiv.innerHTML += `
+                        <div class="p-2.5 rounded-lg max-w-[85%] text-xs ${isTeam ? 'bg-blue-600 self-end text-white' : 'bg-slate-900 border border-slate-700 self-start text-slate-200'}">
+                            <b>${isTeam ? 'Equipe' : 'Cliente'}:</b> ${msg.text}
+                        </div>
+                    `;
+                });
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            });
+        }
+
+        window.sendTeamMessage = async function() {
+            const input = document.getElementById('team-message-input');
+            if (!input || !input.value.trim() || !currentActiveChatId) return;
+
+            const text = input.value;
+            input.value = '';
+
+            try {
+                await addDoc(collection(db, "chats", currentActiveChatId, "messages"), {
+                    sender: 'team',
+                    text: text,
+                    timestamp: serverTimestamp()
+                });
+            } catch (error) {
+                console.error("Erro ao enviar mensagem:", error);
+            }
+        };
+
+        window.handleTeamKeypress = function(e) {
+            if (e.key === 'Enter') window.sendTeamMessage();
+        };
+
+        window.closeActiveChat = async function() {
+            if (!currentActiveChatId) return;
+            if (confirm('Deseja encerrar este atendimento?')) {
+                await updateDoc(doc(db, "chats", currentActiveChatId), { status: 'closed' });
+                resetChatUI();
+            }
+        };
+
+        window.cancelOrder = async function() {
+            if (!currentActiveChatId) return;
+            if (confirm('Tem certeza que deseja CANCELAR este pedido?')) {
+                await updateDoc(doc(db, "chats", currentActiveChatId), { status: 'cancelled' });
+                resetChatUI();
+            }
+        };
+
+        function resetChatUI() {
+            if (teamUnsubscribeMessages) teamUnsubscribeMessages();
+            currentActiveChatId = null;
+            document.getElementById('team-chat-messages').innerHTML = `<p class="text-slate-500 text-center my-auto text-xs">Nenhuma conversa selecionada.</p>`;
+            document.getElementById('team-chat-controls').classList.add('hidden');
+            document.getElementById('chat-actions').classList.add('hidden');
+            document.getElementById('pinned-purchase-info').classList.add('hidden');
+            document.getElementById('pinned-proof-info').classList.add('hidden');
+            document.getElementById('active-chat-header').innerHTML = `<span class="text-xs text-slate-400 font-medium">Selecione um chat ao lado para conversar</span>`;
+        }
+
+        function loadTeamChat() {
+            const container = document.getElementById('team-chat-container');
+            if (!container) return;
+
+            const teamMessagesRef = collection(db, "team_chat");
+            const q = query(teamMessagesRef, orderBy("timestamp", "asc"));
+
+            if (teamChatUnsubscribe) teamChatUnsubscribe();
+
+            teamChatUnsubscribe = onSnapshot(q, (snapshot) => {
+                container.innerHTML = '';
+                if (snapshot.empty) {
+                    container.innerHTML = `<p class="text-slate-500 text-center text-xs my-auto">Nenhuma mensagem no chat interno.</p>`;
+                    return;
+                }
+
+                snapshot.forEach((docSnap) => {
+                    const msg = docSnap.data();
+                    container.innerHTML += `
+                        <div class="bg-slate-800 border border-slate-700 p-2.5 rounded-lg text-xs flex flex-col">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="font-bold text-blue-400">${msg.senderName}</span>
+                                <span class="text-[10px] text-slate-500">${msg.timestamp ? new Date(msg.timestamp.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Agora'}</span>
+                            </div>
+                            <p class="text-slate-200">${msg.text}</p>
+                        </div>
+                    `;
+                });
+                container.scrollTop = container.scrollHeight;
+            });
+        }
+
+        window.sendTeamInternalMessage = async function() {
+            const input = document.getElementById('team-internal-message-input');
+            if (!input || !input.value.trim()) return;
+
+            const user = auth.currentUser;
+            const text = input.value;
+            input.value = '';
+
+            try {
+                await addDoc(collection(db, "team_chat"), {
+                    senderName: user ? (user.displayName || user.email) : "Equipe Thulerx",
+                    text: text,
+                    timestamp: serverTimestamp()
+                });
+            } catch (error) {
+                console.error("Erro ao enviar mensagem:", error);
+            }
+        };
+
+        window.handleTeamInternalKeypress = function(e) {
+            if (e.key === 'Enter') window.sendTeamInternalMessage();
+        };
+    </script>
+</body>
+</html>

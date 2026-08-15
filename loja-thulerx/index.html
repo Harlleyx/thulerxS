@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thulerx Store - Loja de Roblox</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+        
+    </script>
+
+    <!-- Estilos de identidade visual: partículas, entradas suaves e transições -->
+    <style>
+        #tx-particles-canvas {
+            z-index: -1;
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+            /* Entrada escalonada do hero */
+            .tx-hero-in {
+                opacity: 0;
+                transform: translateY(14px);
+                animation: tx-fade-up .7s cubic-bezier(.16,.84,.44,1) forwards;
+            }
+            .tx-hero-d1 { animation-delay: .05s; }
+            .tx-hero-d2 { animation-delay: .16s; }
+            .tx-hero-d3 { animation-delay: .27s; }
+            .tx-hero-d4 { animation-delay: .38s; }
+
+            @keyframes tx-fade-up {
+                to { opacity: 1; transform: translateY(0); }
+            }
+
+            /* Brilho sutil no título em gradiente */
+            .tx-shimmer {
+                background-size: 200% auto;
+                animation: tx-shimmer 5s ease-in-out infinite;
+            }
+            @keyframes tx-shimmer {
+                0%, 100% { background-position: 0% center; }
+                50% { background-position: 100% center; }
+            }
+
+            /* Entrada dos cards de produto/avaliação */
+            .tx-card-in {
+                animation: tx-card-in .55s cubic-bezier(.16,.84,.44,1) both;
+            }
+            @keyframes tx-card-in {
+                from { opacity: 0; transform: translateY(14px) scale(.98); }
+                to { opacity: 1; transform: translateY(0) scale(1); }
+            }
+
+            /* Leve elevação no hover dos cards */
+            #product-grid > *, #public-reviews-grid > * {
+                transition: transform .25s ease, box-shadow .25s ease;
+            }
+            #product-grid > *:hover, #public-reviews-grid > *:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 12px 32px -12px rgba(37,99,235,.35);
+            }
+
+            /* Transição suave dos modais */
+            .tx-modal-panel {
+                animation: tx-modal-in .35s cubic-bezier(.16,.84,.44,1);
+            }
+            @keyframes tx-modal-in {
+                from { opacity: 0; transform: scale(.96) translateY(8px); }
+                to { opacity: 1; transform: scale(1) translateY(0); }
+            }
+
+            #ncs-fab {
+                animation: tx-fade-up .5s cubic-bezier(.16,.84,.44,1) forwards;
+            }
+        }
+
+        /* ---- Player de música NCS ---- */
+        #ncs-player { width: 272px; max-width: calc(100vw - 1.5rem); }
+        #ncs-disc {
+            transition: transform .4s ease;
+        }
+        #ncs-disc.is-spinning {
+            animation: ncs-spin 6s linear infinite;
+        }
+        @keyframes ncs-spin {
+            to { transform: rotate(360deg); }
+        }
+        #ncs-progress-fill {
+            transition: width .2s linear;
+        }
+        #ncs-volume {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 56px;
+            height: 3px;
+            border-radius: 999px;
+            background: rgb(51 65 85);
+            outline: none;
+        }
+        #ncs-volume::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            background: rgb(96 165 250);
+            cursor: pointer;
+        }
+        #ncs-volume::-moz-range-thumb {
+            width: 10px;
+            height: 10px;
+            border: none;
+            border-radius: 999px;
+            background: rgb(96 165 250);
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="bg-black text-black-100 min-h-screen flex flex-col justify-between selection:bg-black-1000 selection:text-white antialiased">
+
+    <!-- Tela de Manutenção (controlada pela Equipe via Painel/Firestore) -->
+    <div id="maintenance-screen" class="fixed inset-0 z-[100] bg-slate-950 flex flex-col items-center justify-center hidden p-6 text-center overflow-hidden">
+        <!-- Efeito de Fundo Animado/Brilho -->
+        <div class="absolute -top-40 -left-40 w-96 h-96 bg-blue-600/20 rounded-full blur-[128px] pointer-events-none animate-pulse"></div>
+        <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-indigo-600/20 rounded-full blur-[128px] pointer-events-none animate-pulse" style="animation-delay: 1s;"></div>
+        <div class="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px] opacity-30 pointer-events-none"></div>
+
+        <div class="relative z-10 max-w-md space-y-6 bg-slate-900/80 border border-slate-800 p-8 rounded-3xl backdrop-blur-xl shadow-2xl">
+            <div class="w-16 h-16 bg-blue-600/10 border border-blue-500/30 rounded-2xl flex items-center justify-center mx-auto text-3xl">
+                🛠️
+            </div>
+            <div class="space-y-2">
+                <h1 class="text-2xl font-black text-white tracking-tight uppercase">Site em Manutenção</h1>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    Estamos realizando atualizações e melhorias na loja para te atender melhor. Voltaremos em breve!
+                </p>
+            </div>
+            <div class="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[11px] font-bold px-4 py-2 rounded-full">
+                <span class="w-2 h-2 rounded-full bg-blue-500 animate-ping"></span>
+                Atualização em andamento
+            </div>
+        </div>
+    </div>
+
+    <!-- Container do Toast (Notificações Flutuantes) -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Cabeçalho / Navegação -->
+    <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800/80">
+        <div class="max-w-1xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
+            
+            <!-- Logo -->
+            <a href="#" class="text-xl font-black tracking-wider text-blue-500 uppercase flex items-center gap-1.5 shrink-0">
+                <img
+  src="./logo.png"
+  alt="THULERX"
+  style="
+    width: 35px !important;
+    height: 35px !important;
+    object-fit: contain !important;
+    display: block !important;
+  "
+>
+                <span>Thulerx<span class="text-white">Store</span></span>
+            </a>
+
+            <!-- Barra de Busca -->
+            <div class="flex-1 max-w-md hidden sm:block">
+                <div class="relative">
+                    <input type="text" oninput="handleSearch(event)" placeholder="Buscar produtos..." class="w-full bg-slate-950 border border-slate-800 rounded-x2 px-4 py-2 pl-9 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition">
+                    <span class="absolute left-3 top-2.5 text-xs text-slate-500"><img src="/lupa.png " width="13"/></span>
+                </div>
+            </div>
+
+<!-- Botões de Ação -->
+            <div class="flex items-center gap-4 shrink-0">
+                <button onclick="toggleCart()" title="Carrinho" class="relative w-10 h-10 rounded-full bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 flex items-center justify-center text-base transition active:scale-90">
+                    <img src="/cart.png" width="20"/>
+                    <span id="cart-count" class="absolute -top-2 -right-2.5 bg-blue-600 text-white text-[10px] font-bold w-4.5 h-4.5 min-w-[18px] px-1 py-0.5 rounded-full">0</span>
+                </button>
+
+                <div id="auth-btn-container"></div>
+            </div>
+        </div>
+        </div>
+
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main class="flex-1 max-w-7xl mx-auto px-4 py-6 w-full space-y-12">
+        
+        <!-- Hero / Banner Principal -->
+        <section class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-900/40 via-slate-900 to-slate-950 border border-blue-500/20 p-8 md:p-12 shadow-2xl">
+            <div class="relative z-10 max-w-xl space-y-4">
+                <span class="tx-hero-d1 inline-flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[11px] font-bold px-3 py-1 rounded-full">
+                     Entregas e Suporte Prioritário via Pix
+                </span>
+                <h1 class="tx-hero-in tx-hero-d2 tx-display text-3xl md:text-3xl font-bold tracking-tight text-white leading-tight">
+                    “Tudo posso naquele que me fortalece.”
+                </h1>
+                <p class="tx-hero-in tx-hero-d2 tx-tag text-blue-400 text-[20px] font-bold uppercase">  Filipenses 4:13</p>
+                <p class="tx-hero-in tx-hero-d3 text-xs md:text-sm font-bold text-white leading-relaxed">
+                    Produtos Roblox.
+                </p>
+                <div class="tx-hero-in tx-hero-d4 pt-2 flex flex-wrap gap-3">
+                    <a href="#product-grid" class="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-6 py-3 rounded-x2 transition">
+                        Ver Produtos
+                    </a>
+                    <a href="https://discord.gg" target="_blank" class="bg-white 1000 hover:bg-white-700 border border-slate-700 text-black -200 font-bold text-xs px-5 py-3 rounded-x2 transition flex items-center gap-2">
+                        <span>👾 Entrar no Discord</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Círculo decorativo no background -->
+            <div class="absolute -right-12 -bottom-12 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
+        </section>
+
+        <!-- Busca no Mobile -->
+        <div class="sm:hidden">
+            <input type="text" oninput="handleSearch(event)" placeholder="Buscar produtos..." class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500">
+        </div>
+        
+        <!-- Vitrine de Produtos -->
+        <section class="space-y-6">
+                <div>
+                    <h2 class=" text-3xl font-bold text-slate-100 uppercase tracking-wider">Produtos</h2>
+                    <p class="text-xs text-slate-400">Confira nossas ofertas e estoques disponíveis</p>
+                </div>
+            </div>
+
+        <!-- Filtros de Categoria -->
+        <div class="bg-slate-950/80 border-t border-slate-800/60 py-2.5 px-4 overflow-x-auto no-scrollbar">
+            <div id="category-filter" class="max-w-7xl mx-auto flex items-center gap-2">
+                <!-- Injetado via JS -->
+            </div>
+        </div>
+
+            <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                <!-- Preenchido dinamicamente via JS -->
+            </div>
+        </section>
+
+        <!-- Avaliações da Comunidade -->
+        <section class="space-y-6 pt-6 border-t border-slate-800/80">            
+                <h2 class="text-3xl font-black text-slate-100 uppercase tracking-wider">Avaliações dos Clientes</h2>
+                <p class="text-xs text-slate-400">O que a comunidade diz sobre nossos envios e atendimento</p>
+            </div>
+
+            <div id="public-reviews-grid" class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <!-- Preenchido via JS -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Rodapé -->
+    <footer class="bg-slate-900 border-t border-slate-800/80 mt-16 text-slate-400 text-xs">
+        <div class="max-w-7xl mx-auto px-4 py-10 grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div class="space-y-3">
+                <a href="#" class="text-lg font-black tracking-wider text-blue-500 uppercase">ThulerxStore</a>
+                <p class="text-xs text-slate-500 leading-relaxed">Sua loja referência de roblox com atendimento ágil.</p>
+            </div>
+
+            <div class="space-y-2">
+                <h4 class="font-bold text-slate-200 uppercase tracking-wider text-[11px]">Navegação</h4>
+                <ul class="space-y-1.5 text-slate-400">
+                    <li><a href="#" class="hover:text-blue-400 transition">Início</a></li>
+                    <li><a href="#product-grid" class="hover:text-blue-400 transition">Produtos</a></li>
+                    <li><a href="#" onclick="openProfileModal(); return false;" class="hover:text-blue-400 transition">Minha Conta</a></li>
+                </ul>
+            </div>
+
+            <div class="space-y-2">
+                <h4 class="font-bold text-slate-200 uppercase tracking-wider text-[11px]">Suporte & Legal</h4>
+                <ul class="space-y-1.5 text-slate-400">
+                    <li><a href="#" class="hover:text-blue-400 transition">Termos de Serviço</a></li>
+                    <li><a href="#" class="hover:text-blue-400 transition">Política de Privacidade</a></li>
+                    <li><a href="#" class="hover:text-blue-400 transition">Trocas e Devoluções</a></li>
+                </ul>
+            </div>
+
+            <div class="space-y-2">
+                <h4 class="font-bold text-white-200 uppercase tracking-wider text-[11px]">Comunidade</h4>
+                <a href="https://discord.gg" target="_blank" class="inline-flex items-center gap-2 bg-white-600 hover:bg-white-600 text-black-300 hover:text-white px-3.5 py-2 rounded-x2 text-xs font-bold transition">
+                    👾 Servidor no Discord
+                </a>
+            </div>
+        </div>
+
+        <div class="border-t border-slate-800/60 py-4 text-center text-slate-500 text-[11px]">
+        &copy; 2026 Thulerx Store. Todos os direitos reservados. | <a href="equipe.html" class="text--400 hover:underline font-semibold">Painel da Equipe</a>
+        </div>
+    </footer>
+
+    <!-- Botão Flutuante de Chat (Inicia oculto por padrão) -->
+    <div id="floating-chat-btn" onclick="openActiveChat()" class="hidden fixed bottom-6 right-6 z-40 bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 rounded-x1 shadow-2xl cursor-pointer flex items-center gap-2 text-xs font-bold transition duration-300 animate-bounce">
+        💬 Atendimento Ativo
+    </div>
+
+    <!-- Modais (Carrinho, Checkout, Perfil, Avaliação) -->
+    <!-- Modal do Carrinho -->
+    <div id="cart-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="tx-modal-panel bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-800 mb-4">
+                <h3 class="font-bold text-sm text-slate-100 uppercase tracking-wider">Seu Carrinho</h3>
+                <button onclick="toggleCart()" class="text-slate-400 hover:text-white">✕</button>
+            </div>
+            
+            <div id="cart-items" class="flex-1 overflow-y-auto space-y-2 pr-1"></div>
+
+            <div class="border-t border-slate-800 pt-4 mt-4 space-y-3">
+                <div class="flex justify-between items-center text-sm font-bold">
+                    <span class="text-slate-400">Total:</span>
+                    <span id="cart-total" class="text-blue-400 font-black text-base">R$ 0,00</span>
+                </div>
+                <button onclick="openCheckout()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-xl text-xs transition shadow-lg shadow-blue-600/20">Avançar para Pagamento (Pix)</button>
+            </div>
+        </div>
+    </div>
+
+<!-- Modal Checkout / Pix / Chat -->
+<div id="checkout-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="tx-modal-panel bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 flex flex-col h-[540px]">
+        <div class="flex justify-between items-center pb-3 border-b border-slate-800 mb-4">
+            <h3 class="font-bold text-sm text-blue-400 uppercase tracking-wider">Pagamento & Suporte</h3>
+            <button onclick="closeCheckout()" class="text-slate-400 hover:text-white">✕</button>
+        </div>
+
+        <!-- Seção de Pagamento Pix -->
+        <div id="pix-section" class="flex-1 flex flex-col justify-center items-center space-y-4 text-center">
+            <p class="text-xs text-slate-300">Copie a chave Pix abaixo ou escaneie o código:</p>
+            <div class="bg-white p-3 rounded-2xl">
+                <img src="https://via.placeholder.com/150/000000/FFFFFF?text=QR+Code+Pix" alt="QR Code" class="w-32 h-32">
+            </div>
+            <div class="w-full max-w-xs flex gap-2">
+                <input type="text" id="pix-key" readonly value="00020126580014br.gov.bcb.pix..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-[10px] text-slate-300">
+                <button onclick="copyPixKey()" class="bg-slate-800 hover:bg-slate-700 px-3 py-2 rounded-xl text-xs font-semibold border border-slate-700">Copiar</button>
+            </div>
+
+            <div class="w-full max-w-xs text-left space-y-1.5">
+                <label for="payment-proof-link" class="text-[11px] font-semibold text-slate-400">Link do comprovante <span class="text-red-400">*</span></label>
+                <input
+                    type="url"
+                    id="payment-proof-link"
+                    placeholder="Cole aqui o link da imagem/print do comprovante"
+                    class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-[11px] text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                >
+                <p class="text-[10px] text-slate-500">Envie a imagem para algum site tipo Imgur/Postimages e cole o link aqui.</p>
+            </div>
+
+            <button onclick="handleConfirmPayment()" class="w-full max-w-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl text-xs transition shadow-lg shadow-emerald-600/20">Já paguei / Abrir Atendimento</button>
+        </div>
+
+        <!-- Seção de Chat do Cliente -->
+        <div id="client-chat-section" class="hidden flex-1 flex flex-col h-full">
+            <div id="chat-order-summary" class="bg-slate-950 border border-slate-800 rounded-xl p-3 mb-3 text-xs space-y-1">
+                <div class="flex justify-between items-center font-bold text-slate-300 border-b border-slate-800/80 pb-1.5 mb-1.5">
+                    <span class="text-blue-400">📦 Resumo do Pedido</span>
+                    <span id="chat-order-status" class="text-[10px] bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-md border border-blue-500/20">Em Andamento</span>
+                </div>
+                <div id="chat-purchased-items-list" class="text-slate-400 space-y-1 max-h-16 overflow-y-auto pr-1">
+                    <!-- Injetado via JS -->
+                </div>
+            </div>
+
+            <div id="chat-messages" class="flex-1 overflow-y-auto space-y-2 pr-1 mb-3 flex flex-col"></div>
+
+            <div class="flex gap-2">
+                <input type="text" id="client-message-input" onkeypress="if(event.key==='Enter') sendClientMessage()" placeholder="Digite sua mensagem..." class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                <button onclick="sendClientMessage()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-xs font-semibold transition">Enviar</button>
+            </div>
+        </div>
+    </div>
+</div>
+            <!-- Seção de Chat do Cliente -->
+            <div id="client-chat-section" class="hidden flex-1 flex flex-col h-full">
+                <!-- Resumo dos Itens Comprados Fixado no Topo do Chat -->
+                <div id="chat-order-summary" class="bg-slate-950 border border-slate-800 rounded-xl p-3 mb-3 text-xs space-y-1">
+                    <div class="flex justify-between items-center font-bold text-slate-300 border-b border-slate-800/80 pb-1.5 mb-1.5">
+                        <span class="text-blue-400">📦 Resumo do Pedido</span>
+                        <span id="chat-order-status" class="text-[10px] bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-md border border-blue-500/20">Em Andamento</span>
+                    </div>
+                    <div id="chat-purchased-items-list" class="text-slate-400 space-y-1 max-h-16 overflow-y-auto pr-1">
+                        <!-- Injetado via JS -->
+                    </div>
+                </div>
+
+                <div id="chat-messages" class="flex-1 overflow-y-auto space-y-2 pr-1 mb-3 flex flex-col"></div>
+                
+                <div class="flex gap-2">
+                    <input type="text" id="client-message-input" onkeypress="if(event.key==='Enter') sendClientMessage()" placeholder="Digite sua mensagem..." class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+                    <button onclick="sendClientMessage()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-xs font-semibold transition">Enviar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Avaliação / Cancelamento -->
+    <div id="review-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="tx-modal-panel bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 flex flex-col space-y-4 text-center relative">
+            <button onclick="closeReviewModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-sm font-bold">✕</button>
+
+            <!-- Visível quando o atendimento é Concluído normalmente -->
+            <div id="review-modal-content" class="space-y-4">
+                <h3 id="review-title" class="font-bold text-sm text-blue-400">Atendimento Concluído!</h3>
+                <p id="review-subtitle" class="text-xs text-slate-300">Deixe sua nota para ajudar outros clientes:</p>
+                
+                <div id="rating-stars-container" class="flex justify-center gap-2 text-2xl">
+                    <button onclick="setRating(1)" class="star-btn text-amber-400 transition">★</button>
+                    <button onclick="setRating(2)" class="star-btn text-amber-400 transition">★</button>
+                    <button onclick="setRating(3)" class="star-btn text-amber-400 transition">★</button>
+                    <button onclick="setRating(4)" class="star-btn text-amber-400 transition">★</button>
+                    <button onclick="setRating(5)" class="star-btn text-amber-400 transition">★</button>
+                </div>
+
+                <textarea id="review-comment-input" placeholder="Comentário sobre a entrega/atendimento..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 focus:outline-none focus:border-blue-500 h-24 resize-none"></textarea>
+                
+                <div class="space-y-2">
+                    <button onclick="submitClientReview()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-xl text-xs transition shadow-lg shadow-blue-600/20">Enviar Avaliação</button>
+                    <button onclick="skipReview()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2.5 rounded-xl text-xs transition border border-slate-700">Não avaliar</button>
+                </div>
+            </div>
+
+            <!-- Visível quando a equipe Cancela o Pedido -->
+            <div id="canceled-order-content" class="hidden space-y-4 py-4">
+                <div class="w-12 h-12 bg-red-500/10 border border-red-500/20 text-red-400 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
+                    ✕
+                </div>
+                <h3 class="font-bold text-base text-red-400">Pedido Cancelado</h3>
+                <p class="text-xs text-slate-300 leading-relaxed">
+                    Este atendimento e pedido foram cancelados pela equipe. Se você tiver dúvidas ou precisar de ajuda, entre em contato conosco pelo Discord.
+                </p>
+                <button onclick="closeReviewModal()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2.5 rounded-xl text-xs transition border border-slate-700">Entendido</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Perfil -->
+    <div id="profile-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="tx-modal-panel bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 flex flex-col space-y-4">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+                <h3 class="font-bold text-sm text-slate-100 uppercase tracking-wider">Meu Perfil</h3>
+                <button onclick="closeProfileModal()" class="text-slate-400 hover:text-white">✕</button>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <img id="profile-avatar" src="https://via.placeholder.com/48" alt="Avatar" class="w-12 h-12 rounded-full object-cover border border-slate-700">
+                <div>
+                    <h4 id="profile-name" class="font-bold text-sm text-slate-200"></h4>
+                    <p id="profile-email" class="text-xs text-slate-400"></p>
+                </div>
+            </div>
+
+            <div class="bg-slate-950/80 border border-slate-800/80 rounded-xl p-3 flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-400">Total de compras realizadas:</span>
+                <span id="profile-purchase-count" class="text-xs font-black text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2.5 py-1 rounded-lg">0 compras</span>
+            </div>
+
+            <div class="space-y-2">
+                <h5 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Meus Atendimentos</h5>
+                <div id="profile-history-list" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+            </div>
+
+            <div class="pt-2 border-t border-slate-800 flex justify-between items-center">
+                <button onclick="logoutUser()" class="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 px-3 py-1.5 rounded-xl text-xs font-semibold transition">Sair</button>
+                <button onclick="closeProfileModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-1.5 rounded-xl text-xs font-medium transition">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- PLAYER DE MÚSICA NCS — bloco autocontido (copiar para equipe.html também) -->
+    <!-- ============================================================ -->
+    <audio id="ncs-audio" preload="metadata"></audio>
+
+    <button id="ncs-fab" class="hidden fixed bottom-6 left-6 z-40 w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-500 text-white shadow-2xl shadow-blue-600/30 items-center justify-center text-lg transition active:scale-95" title="Abrir player de música">
+        🎵
+    </button>
+
+    <div id="ncs-player" class="fixed bottom-6 left-6 z-40 bg-slate-900/95 backdrop-blur-md border border-slate-800 rounded-2xl shadow-2xl p-3 space-y-2.5">
+        <div class="flex items-center justify-between">
+            <span class="inline-flex items-center gap-1.5 text-[10px] font-bold text-blue-400 uppercase tracking-wider">
+                <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> NCS Player
+            </span>
+            <button id="ncs-minimize" class="text-slate-500 hover:text-white text-xs leading-none px-1" title="Minimizar">─</button>
+        </div>
+
+        <div class="flex items-center gap-2.5">
+            <div id="ncs-disc" class="shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-sm border border-blue-400/30">
+                🎧
+            </div>
+            <div class="min-w-0 flex-1">
+                <p id="ncs-track-title" class="truncate text-xs font-bold text-slate-100">—</p>
+                <p id="ncs-track-artist" class="truncate text-[10px] text-slate-400">—</p>
+            </div>
+        </div>
+
+        <div class="h-1 bg-slate-800 rounded-full overflow-hidden cursor-pointer" id="ncs-progress-bar">
+            <div id="ncs-progress-fill" class="h-full bg-blue-500 w-0"></div>
+        </div>
+
+        <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-1.5">
+                <button id="ncs-prev" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700/80 text-slate-200 text-[11px] flex items-center justify-center transition active:scale-95" title="Faixa anterior">⏮</button>
+                <button id="ncs-playpause" class="w-8 h-8 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs flex items-center justify-center transition active:scale-95 shadow-lg shadow-blue-600/20" title="Play/Pausa">▶</button>
+                <button id="ncs-next" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700/80 text-slate-200 text-[11px] flex items-center justify-center transition active:scale-95" title="Próxima faixa">⏭</button>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <button id="ncs-mute" class="text-slate-400 hover:text-white text-[11px]" title="Mudo/Ativar som">🔊</button>
+                <input type="range" id="ncs-volume" min="0" max="1" step="0.01" value="0.6" title="Volume">
+            </div>
+        </div>
+    </div>
+    <!-- ========================== FIM DO PLAYER =========================== -->
+
+    <!-- Script principal -->
+    <script type="module" src="app.js"></script>
+
+    <!-- Script auxiliar para funções rápidas da interface -->
+    <script>
+        function closeReviewModal() {
+            const modal = document.getElementById('review-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function skipReview() {
+            closeReviewModal();
+        }
+
+        // ---- Fundo de partículas (poeira digital azul/ciano) ----
+        (function () {
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+            const canvas = document.getElementById('tx-particles-canvas');
+            if (!canvas || !canvas.getContext) return;
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+            let width, height, dpr;
+
+            function resize() {
+                dpr = Math.min(window.devicePixelRatio || 1, 2);
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width * dpr;
+                canvas.height = height * dpr;
+                canvas.style.width = width + 'px';
+                canvas.style.height = height + 'px';
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            }
+
+            function makeParticles() {
+                const count = Math.min(70, Math.floor((width * height) / 22000));
+                particles = Array.from({ length: count }, () => ({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    r: Math.random() * 1.6 + 0.4,
+                    speedY: Math.random() * 0.25 + 0.05,
+                    drift: (Math.random() - 0.5) * 0.15,
+                    alpha: Math.random() * 0.5 + 0.15,
+                    hue: Math.random() > 0.5 ? '96,165,250' : '129,140,248'
+                }));
+            }
+
+            function tick() {
+                ctx.clearRect(0, 0, width, height);
+                for (const p of particles) {
+                    p.y -= p.speedY;
+                    p.x += p.drift;
+                    if (p.y < -4) { p.y = height + 4; p.x = Math.random() * width; }
+                    if (p.x < -4) p.x = width + 4;
+                    if (p.x > width + 4) p.x = -4;
+
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(${p.hue}, ${p.alpha})`;
+                    ctx.shadowColor = `rgba(${p.hue}, ${p.alpha})`;
+                    ctx.shadowBlur = 4;
+                    ctx.fill();
+                }
+                requestAnimationFrame(tick);
+            }
+
+            resize();
+            makeParticles();
+            tick();
+            window.addEventListener('resize', () => { resize(); makeParticles(); });
+        })();
+
+        // ---- Anima os cards de produto/avaliação assim que o app.js os renderiza ----
+        (function () {
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+            function watch(id) {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const observer = new MutationObserver((mutations) => {
+                    mutations.forEach((m) => {
+                        m.addedNodes.forEach((node, i) => {
+                            if (node.nodeType !== 1) return;
+                            node.classList.add('tx-card-in');
+                            node.style.animationDelay = (i % 8) * 0.05 + 's';
+                        });
+                    });
+                });
+                observer.observe(el, { childList: true });
+            }
+
+            watch('product-grid');
+            watch('public-reviews-grid');
+        })();
+
+        // ---- Player de música NCS ----
+        // Lê automaticamente as faixas de music/playlist.json (pasta "music").
+        // Se esse arquivo não existir ainda, o player usa 4 faixas de
+        // demonstração como fallback — nada quebra enquanto você não o cria.
+        (async function () {
+            const demoPlaylist = [
+                { title: 'Faixa Demo 1', artist: 'Crie music/playlist.json', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
+                { title: 'Faixa Demo 2', artist: 'Crie music/playlist.json', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
+                { title: 'Faixa Demo 3', artist: 'Crie music/playlist.json', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' },
+                { title: 'Faixa Demo 4', artist: 'Crie music/playlist.json', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3' },
+            ];
+
+            // Aceita tanto "arquivo.mp3" (título/artista tirados do nome, no
+            // padrão "Artista - Título.mp3") quanto {file, title, artist}.
+            function parseEntry(entry) {
+                if (typeof entry === 'string') {
+                    const base = entry.replace(/\.[^/.]+$/, '');
+                    let title = base, artist = 'Desconhecido';
+                    if (base.includes(' - ')) {
+                        const parts = base.split(' - ');
+                        artist = parts[0].trim();
+                        title = parts.slice(1).join(' - ').trim();
+                    }
+                    return { title, artist, src: 'music/' + entry };
+                }
+                const base = (entry.file || '').replace(/\.[^/.]+$/, '');
+                return {
+                    title: entry.title || base || 'Sem título',
+                    artist: entry.artist || 'Desconhecido',
+                    src: 'music/' + entry.file,
+                };
+            }
+
+            let playlist = demoPlaylist;
+            try {
+                const res = await fetch('music/playlist.json', { cache: 'no-store' });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (Array.isArray(data) && data.length) {
+                        playlist = data.map(parseEntry);
+                    }
+                }
+            } catch (err) {
+                // music/playlist.json ainda não existe (ou o site foi aberto
+                // direto pelo arquivo, sem servidor) — segue com as faixas demo
+            }
+
+            const audio = document.getElementById('ncs-audio');
+            const player = document.getElementById('ncs-player');
+            const fab = document.getElementById('ncs-fab');
+            const minimizeBtn = document.getElementById('ncs-minimize');
+            const playPauseBtn = document.getElementById('ncs-playpause');
+            const prevBtn = document.getElementById('ncs-prev');
+            const nextBtn = document.getElementById('ncs-next');
+            const muteBtn = document.getElementById('ncs-mute');
+            const volumeSlider = document.getElementById('ncs-volume');
+            const titleEl = document.getElementById('ncs-track-title');
+            const artistEl = document.getElementById('ncs-track-artist');
+            const disc = document.getElementById('ncs-disc');
+            const progressBar = document.getElementById('ncs-progress-bar');
+            const progressFill = document.getElementById('ncs-progress-fill');
+
+            if (!audio || !player || !playlist.length) return;
+
+            let currentIndex = parseInt(localStorage.getItem('ncsTrackIndex') || '0', 10);
+            if (isNaN(currentIndex) || currentIndex < 0 || currentIndex >= playlist.length) currentIndex = 0;
+
+            const savedVolume = parseFloat(localStorage.getItem('ncsVolume'));
+            audio.volume = isNaN(savedVolume) ? 0.6 : savedVolume;
+            volumeSlider.value = audio.volume;
+
+            function loadTrack(index, autoplay) {
+                currentIndex = (index + playlist.length) % playlist.length;
+                const track = playlist[currentIndex];
+                audio.src = track.src;
+                titleEl.textContent = track.title;
+                artistEl.textContent = track.artist;
+                localStorage.setItem('ncsTrackIndex', String(currentIndex));
+                progressFill.style.width = '0%';
+                if (autoplay) audio.play().catch(() => {});
+            }
+
+            function setPlayingUI(isPlaying) {
+                playPauseBtn.textContent = isPlaying ? '⏸' : '▶';
+                disc.classList.toggle('is-spinning', isPlaying);
+            }
+
+            playPauseBtn.addEventListener('click', () => {
+                if (audio.paused) {
+                    if (!audio.src) loadTrack(currentIndex, false);
+                    audio.play().catch(() => {});
+                } else {
+                    audio.pause();
+                }
+            });
+
+            prevBtn.addEventListener('click', () => loadTrack(currentIndex - 1, !audio.paused || audio.currentTime > 0));
+            nextBtn.addEventListener('click', () => loadTrack(currentIndex + 1, !audio.paused || audio.currentTime > 0));
+
+            audio.addEventListener('play', () => setPlayingUI(true));
+            audio.addEventListener('pause', () => setPlayingUI(false));
+            audio.addEventListener('ended', () => loadTrack(currentIndex + 1, true));
+
+            audio.addEventListener('timeupdate', () => {
+                if (!audio.duration) return;
+                progressFill.style.width = ((audio.currentTime / audio.duration) * 100) + '%';
+            });
+
+            progressBar.addEventListener('click', (e) => {
+                if (!audio.duration) return;
+                const rect = progressBar.getBoundingClientRect();
+                const ratio = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1);
+                audio.currentTime = ratio * audio.duration;
+            });
+
+            volumeSlider.addEventListener('input', () => {
+                audio.volume = parseFloat(volumeSlider.value);
+                audio.muted = false;
+                muteBtn.textContent = audio.volume === 0 ? '🔇' : '🔊';
+                localStorage.setItem('ncsVolume', String(audio.volume));
+            });
+
+            muteBtn.addEventListener('click', () => {
+                audio.muted = !audio.muted;
+                muteBtn.textContent = audio.muted ? '🔇' : '🔊';
+            });
+
+            function setCollapsed(collapsed) {
+                player.classList.toggle('hidden', collapsed);
+                fab.classList.toggle('hidden', !collapsed);
+                fab.classList.toggle('flex', collapsed);
+                localStorage.setItem('ncsCollapsed', collapsed ? '1' : '0');
+            }
+
+            minimizeBtn.addEventListener('click', () => setCollapsed(true));
+            fab.addEventListener('click', () => setCollapsed(false));
+
+            loadTrack(currentIndex, false);
+            setCollapsed(localStorage.getItem('ncsCollapsed') === '1');
+
+            // ---- Tenta tocar sozinho ao abrir o site ----
+            // Navegadores bloqueiam autoplay com som até o visitante interagir
+            // com a página. Tentamos tocar direto; se for bloqueado, a música
+            // começa automaticamente no primeiro clique/toque/tecla dele.
+            audio.play().catch(() => {
+                const startOnInteraction = () => {
+                    audio.play().catch(() => {});
+                    document.removeEventListener('click', startOnInteraction);
+                    document.removeEventListener('touchstart', startOnInteraction);
+                    document.removeEventListener('keydown', startOnInteraction);
+                };
+                document.addEventListener('click', startOnInteraction, { once: true });
+                document.addEventListener('touchstart', startOnInteraction, { once: true });
+                document.addEventListener('keydown', startOnInteraction, { once: true });
+            });
+        })();
+    </script>
+</body>
+</html>

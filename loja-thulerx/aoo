@@ -1,0 +1,22 @@
+const firebaseConfig = {
+  apiKey: "AIzaSyDjzc-lFAujv5s3A5LHR23qPKXN90exAJw",
+  authDomain: "thulerx-store.firebaseapp.com",
+  projectId: "thulerx-store",
+  storageBucket: "thulerx-store.firebasestorage.app",
+  messagingSenderId: "930067642720",
+  appId: "1:930067642720:web:5c4281e9b99fc3714e4605"
+};
+    <!-- Input de Envio do Chat Interno -->
+<div class="flex gap-2">
+    <input type="text" id="team-internal-message-input" onkeypress="window.handleTeamInternalKeypress(event)" placeholder="Digite uma mensagem para a equipe..." class="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+    <button onclick="window.sendTeamInternalMessage()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-semibold transition">Enviar</button>
+</div>
+
+alterar musica
+linha 587 index
+
+   <!-- Fundo de partículas (poeira digital) -->
+    <canvas id="tx-particles-canvas" class="fixed inset-0 -z-10 pointer-events-none" aria-hidden="true"></canvas>
+
+    para mudar o card de produto linha 137 no app.js
+    142 muda o tamnha em y

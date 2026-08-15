@@ -30,6 +30,7 @@ onAuthStateChanged(auth, (user) => {
         
         loadActiveChatsList();
         loadTeamChat(); // Inicia o chat interno da equipe ao logar
+        loadProductsForTeam(); // Carrega o painel de estoque
     } else {
         document.getElementById('dashboard-screen')?.classList.add('hidden');
         document.getElementById('login-screen')?.classList.remove('hidden');
@@ -114,8 +115,17 @@ window.selectChat = async function(chatId) {
         pinnedItems.innerHTML = items.map(i => {
             const qty = i.quantity || 1;
             const total = (i.price * qty).toFixed(2).replace('.', ',');
-            return `• <b>${i.name}</b> (x${qty}) - R$ ${total}`;
-        }).join('<br>');
+            return `
+                <div class="flex items-center justify-between gap-2 py-0.5">
+                    <span>• <b>${i.name}</b> (x${qty}) - R$ ${total}</span>
+                    <button
+                        id="baixar-estoque-${chatId}-${i.id}"
+                        onclick="window.baixarEstoqueDoItem('${i.id}', ${qty}, '${chatId}-${i.id}')"
+                        class="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] px-2 py-1 rounded-lg font-semibold whitespace-nowrap"
+                    >Baixar estoque</button>
+                </div>
+            `;
+        }).join('');
         pinnedInfo.classList.remove('hidden');
     } else {
         pinnedItems.innerHTML = 'Nenhum item registrado para este chat.';
@@ -224,6 +234,106 @@ window.closeActiveChat = async function() {
         }
     }
 }
+
+// Chamado pelo botão "Baixar estoque" dentro do chat com o cliente,
+// depois que a equipe já conferiu o comprovante manualmente.
+window.baixarEstoqueDoItem = async function(productId, qty, buttonKey) {
+    const btn = document.getElementById(`baixar-estoque-${buttonKey}`);
+
+    try {
+        const productRef = doc(db, "products", String(productId));
+        const productSnap = await getDoc(productRef);
+
+        if (!productSnap.exists()) {
+            alert("Produto não encontrado no banco de dados.");
+            return;
+        }
+
+        const currentStock = productSnap.data().stock || 0;
+        const newStock = Math.max(0, currentStock - qty);
+        await updateDoc(productRef, { stock: newStock });
+
+        if (btn) {
+            btn.textContent = "Estoque baixado ✓";
+            btn.disabled = true;
+            btn.classList.remove('bg-emerald-600', 'hover:bg-emerald-500');
+            btn.classList.add('bg-slate-700', 'cursor-not-allowed');
+        }
+    } catch (error) {
+        console.error("Erro ao baixar estoque:", error);
+        alert("Erro ao baixar estoque: " + error.message);
+    }
+};
+
+// ==========================================
+// PAINEL DE ESTOQUE
+// ==========================================
+// Lista todos os produtos em tempo real, com um campo pra editar o
+// estoque e um botão de salvar. Qualquer alteração aqui reflete
+// automaticamente no site, sem precisar editar código nem publicar nada.
+function loadProductsForTeam() {
+    const listDiv = document.getElementById('team-products-list');
+    if (!listDiv) return; // painel ainda não foi adicionado no HTML
+
+    const productsRef = collection(db, "products");
+
+    onSnapshot(productsRef, (snapshot) => {
+        listDiv.innerHTML = '';
+
+        if (snapshot.empty) {
+            listDiv.innerHTML = `<p class="text-xs text-slate-500 text-center py-4">Nenhum produto cadastrado ainda.</p>`;
+            return;
+        }
+
+        snapshot.docs
+            .sort((a, b) => a.data().name.localeCompare(b.data().name))
+            .forEach((docSnap) => {
+                const product = docSnap.data();
+                const productId = docSnap.id;
+
+                listDiv.innerHTML += `
+                    <div class="flex items-center justify-between gap-3 bg-slate-900 border border-slate-800 p-3 rounded-xl text-xs">
+                        <span class="font-bold text-slate-200 flex-1 truncate">${product.name}</span>
+                        <button onclick="window.adjustStock('${productId}', -1)" class="bg-slate-800 hover:bg-slate-700 w-7 h-7 rounded-lg font-bold text-slate-300">-</button>
+                        <input
+                            type="number"
+                            id="stock-input-${productId}"
+                            value="${product.stock}"
+                            min="0"
+                            class="w-14 text-center bg-slate-950 border border-slate-700 rounded-lg py-1 text-slate-100"
+                        />
+                        <button onclick="window.adjustStock('${productId}', 1)" class="bg-slate-800 hover:bg-slate-700 w-7 h-7 rounded-lg font-bold text-slate-300">+</button>
+                        <button onclick="window.saveStock('${productId}')" class="bg-blue-600 hover:bg-blue-500 px-3 py-1.5 rounded-lg font-semibold text-white">Salvar</button>
+                    </div>
+                `;
+            });
+    }, (error) => {
+        console.error("Erro ao carregar produtos:", error);
+    });
+}
+
+// Botões de +1 / -1: só mexem no valor do campo, ainda precisa clicar em Salvar
+window.adjustStock = function(productId, delta) {
+    const input = document.getElementById(`stock-input-${productId}`);
+    if (!input) return;
+    const newValue = Math.max(0, parseInt(input.value || '0', 10) + delta);
+    input.value = newValue;
+};
+
+// Salva o novo valor de estoque direto no Firestore
+window.saveStock = async function(productId) {
+    const input = document.getElementById(`stock-input-${productId}`);
+    if (!input) return;
+
+    const newStock = Math.max(0, parseInt(input.value || '0', 10));
+
+    try {
+        await updateDoc(doc(db, "products", productId), { stock: newStock });
+    } catch (error) {
+        console.error("Erro ao salvar estoque:", error);
+        alert("Erro ao salvar estoque: " + error.message);
+    }
+};
 
 // ==========================================
 // CHAT INTERNO DA EQUIPE

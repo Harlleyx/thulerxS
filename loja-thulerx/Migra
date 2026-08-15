@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Migração de Produtos — Thulerx</title>
+<style>
+  body { font-family: monospace; background: #0f172a; color: #e2e8f0; padding: 2rem; }
+  #log { white-space: pre-wrap; background: #020617; padding: 1rem; border-radius: 8px; margin-top: 1rem; }
+  button { background: #2563eb; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+  button:disabled { background: #475569; cursor: not-allowed; }
+</style>
+</head>
+<body>
+  <h1>Migração de Produtos para o Firestore</h1>
+  <p>Esta página envia os produtos abaixo (mesmos que estavam no app.js) para a coleção <b>"products"</b> no Firestore.</p>
+  <p><b>Rode isso só UMA VEZ.</b> Depois pode deletar este arquivo do repositório.</p>
+  <button id="btn-migrate" onclick="migrate()">Migrar produtos agora</button>
+  <div id="log"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+// Mesmas credenciais do seu app.js / team.js
+const firebaseConfig = {
+  apiKey: "AIzaSyDjzc-lFAujv5s3A5LHR23qPKXN90exAJw",
+  authDomain: "thulerx-store.firebaseapp.com",
+  projectId: "thulerx-store",
+  storageBucket: "thulerx-store.firebasestorage.app",
+  messagingSenderId: "930067642720",
+  appId: "1:930067642720:web:5c4281e9b99fc3714e4605"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+// Lista original que estava fixa no app.js
+const products = [
+    { id: 1, name: "Magma • Fisica", price: 1.00, oldPrice: null, category: "Frutas Fisicas", stock: 1, image: "/magma.png" },
+    { id: 2, name: "Light • Fisíca", price: 1.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/light.png" },
+    { id: 3, name: "Quake • Fisíca", price: 2.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/quake.png" },
+    { id: 4, name: "Buddha • Fisíca", price: 4.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/buddha.png" },
+    { id: 5, name: "Love • Fisíca", price: 2.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/love.png" },
+    { id: 6, name: "Creation • Fisíca", price: 4.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/creation.png" },
+    { id: 7, name: "Spider • Fisíca", price: 2.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/spider.png" },
+    { id: 8, name: "Sound • Fisíca", price: 4.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/sound.png" },
+    { id: 9, name: "Phoenix • Fisíca", price: 5.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/phoenix.png" },
+    { id: 10, name: "Portal • Fisíca", price: 5.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/portal.png" },
+    { id: 11, name: "Lightning • Fisíca", price: 5.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/lightning.png" },
+    { id: 12, name: "Pain • Fisíca", price: 3.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/pain.png" },
+    { id: 13, name: "Blizzard • Fisíca", price: 4.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/blizzard.png" },
+    { id: 14, name: "Gravity • Fisíca", price: 6.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/gravity.png" },
+    { id: 15, name: "Mammoth • Fisíca", price: 5.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/mammoth.png" },
+    { id: 16, name: "T-Rex • Fisíca", price: 6.50, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/trex.png" },
+    { id: 17, name: "Dough • Fisíca", price: 8.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/dough.png" },
+    { id: 18, name: "Shadow • Fisíca", price: 5.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/shadow.png" },
+    { id: 19, name: "Venom • Fisíca", price: 6.50, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/venom.png" },
+    { id: 20, name: "Gas • Fisíca", price: 8.50, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/gas.png" },
+    { id: 21, name: "Spirit • Fisíca", price: 7.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/spirit.png" },
+    { id: 22, name: "Tiger • Fisíca", price: 9.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/tiger.png" },
+    { id: 23, name: "Yeti • Fisíca", price: 7.50, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/yeti.png" },
+    { id: 24, name: "Kitisune • Fisíca", price: 15.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/kitsune.png" },
+    { id: 25, name: "Control • Fisíca", price: 15.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/control.png" },
+    { id: 26, name: "Dragon Eastern • Fisíca", price: 20.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/dragonE.png" },
+    { id: 27, name: "Dragon Western • Fisíca", price: 20.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/dragonW.png" },
+];
+
+const logDiv = document.getElementById('log');
+const btn = document.getElementById('btn-migrate');
+
+function log(msg) {
+  logDiv.textContent += msg + "\n";
+}
+
+window.migrate = async function() {
+  btn.disabled = true;
+
+  // Precisa estar logado como equipe (mesma conta usada em team.html)
+  // para ter permissão de escrita, dependendo das suas regras do Firestore.
+  const email = prompt("E-mail da conta da equipe:");
+  const password = prompt("Senha da conta da equipe:");
+
+  try {
+    if (email && password) {
+      await signInWithEmailAndPassword(auth, email, password);
+      log("✅ Login feito com sucesso.");
+    }
+  } catch (e) {
+    log("⚠️ Não foi possível logar (" + e.message + "). Tentando migrar mesmo assim...");
+  }
+
+  log(`Iniciando migração de ${products.length} produtos...`);
+
+  for (const product of products) {
+    try {
+      const { id, ...data } = product;
+      await setDoc(doc(db, "products", String(id)), data);
+      log(`✅ ${product.name} migrado (estoque: ${product.stock})`);
+    } catch (e) {
+      log(`❌ Erro ao migrar ${product.name}: ${e.message}`);
+    }
+  }
+
+  log("\n🎉 Migração concluída! Confira a coleção 'products' no Firebase Console.");
+  log("Agora você já pode apagar este arquivo do repositório.");
+};
+</script>
+</body>
+</html>

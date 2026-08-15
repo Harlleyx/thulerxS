@@ -44,21 +44,6 @@
                 <p class="text-[10px] text-slate-400">Logado como: <span id="logged-user-email" class="text-slate-200"></span></p>
             </div>
             <div class="flex items-center gap-2">
-                <div class="flex items-center gap-2 bg-slate-800/60 border border-slate-700/60 pl-3 pr-2.5 py-1.5 rounded-lg">
-                    <span class="text-[11px] font-semibold text-slate-300 uppercase tracking-wide">Manutenção</span>
-                    <button
-                        onclick="toggleMaintenance()"
-                        id="btn-maint"
-                        type="button"
-                        role="switch"
-                        aria-checked="false"
-                        title="Ativar/Desativar Modo Manutenção do site"
-                        class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full bg-slate-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-                    >
-                        <span id="maint-knob" class="inline-block h-4 w-4 translate-x-1 transform rounded-full bg-white shadow-md transition-transform duration-300"></span>
-                    </button>
-                    <span id="maint-text" class="w-6 text-[10px] font-black text-slate-500">OFF</span>
-                </div>
                 <button onclick="logoutTeam()" class="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 px-3 py-1.5 rounded-lg text-xs font-semibold transition">Sair</button>
             </div>
         </header>
@@ -164,7 +149,6 @@
 
                     loadActiveChatsList();
                     loadTeamChat();
-                    listenMaintenanceState();
                 } else {
                     alert(`Acesso Negado: A conta (${user.email}) não possui permissão para acessar o Painel.`);
                     await signOut(auth);
@@ -196,43 +180,6 @@
                 console.error("Erro ao sair:", error);
             }
         };
-
-        // Alternar modo de manutenção no site
-        window.toggleMaintenance = async function() {
-            const maintRef = doc(db, "system_settings", "maintenance");
-            const snap = await getDoc(maintRef);
-            const current = snap.exists() ? snap.data().active : false;
-            const newState = !current;
-
-            if (confirm(`Deseja ${newState ? 'ATIVAR' : 'DESATIVAR'} o Modo Manutenção no site?`)) {
-                await setDoc(maintRef, { active: newState }, { merge: true });
-                alert(`Modo Manutenção ${newState ? 'Ativado' : 'Desativado'}!`);
-            }
-        };
-
-        function listenMaintenanceState() {
-            onSnapshot(doc(db, "system_settings", "maintenance"), (snap) => {
-                const active = snap.exists() && snap.data().active;
-                const track = document.getElementById('btn-maint');
-                const knob = document.getElementById('maint-knob');
-                const txt = document.getElementById('maint-text');
-
-                if (track) {
-                    track.setAttribute('aria-checked', active ? 'true' : 'false');
-                    track.classList.toggle('bg-amber-500', active);
-                    track.classList.toggle('bg-slate-700', !active);
-                }
-                if (knob) {
-                    knob.classList.toggle('translate-x-1', !active);
-                    knob.classList.toggle('translate-x-6', active);
-                }
-                if (txt) {
-                    txt.textContent = active ? 'ON' : 'OFF';
-                    txt.classList.toggle('text-amber-400', active);
-                    txt.classList.toggle('text-slate-500', !active);
-                }
-            });
-        }
 
         function loadActiveChatsList() {
             const chatsRef = collection(db, "chats");

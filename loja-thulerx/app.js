@@ -53,12 +53,52 @@ function loadProductsFromFirestore() {
             ...docSnap.data()
         }));
 
+        // NOVO: sempre que o estoque mudar no banco, sincroniza as
+        // quantidades já presentes no carrinho para não deixar o cliente
+        // com mais itens no carrinho do que existe em estoque.
+        syncCartWithStock();
+
         renderCategories();
         renderProducts();
     }, (error) => {
         console.error("Erro ao carregar produtos:", error);
         showToast("Erro ao carregar produtos. Recarregue a página.", "❌");
     });
+}
+
+// NOVO: revalida o carrinho contra o estoque atual do Firestore.
+// Se o estoque de um produto diminuiu (outra pessoa comprou, equipe
+// ajustou etc) e o carrinho tinha mais unidades do que isso, a
+// quantidade é reduzida automaticamente (ou o item removido, se o
+// estoque zerou).
+function syncCartWithStock() {
+    if (cart.length === 0) return;
+
+    let changed = false;
+
+    cart = cart.filter(item => {
+        const current = products.find(p => p.id === item.id);
+
+        if (!current || current.stock === 0) {
+            changed = true;
+            return false; // remove item esgotado/removido do carrinho
+        }
+
+        if (item.quantity > current.stock) {
+            item.quantity = current.stock;
+            changed = true;
+        }
+
+        // mantém o "stock" do item do carrinho sempre atualizado
+        item.stock = current.stock;
+
+        return true;
+    });
+
+    if (changed) {
+        showToast('Seu carrinho foi ajustado conforme o estoque disponível.', '⚠️');
+        updateCartUI();
+    }
 }
 
 // Toast / Notificações
@@ -202,7 +242,6 @@ window.handleAddToCart = function(product) {
         return;
     }
     addToCart(product);
-    showToast(`<strong>${product.name}</strong> adicionado!`, '🛒');
 };
 
 window.handleBuy = function(product) {
@@ -211,19 +250,34 @@ window.handleBuy = function(product) {
         return;
     }
     if (!cart.some(item => item.id === product.id)) {
-        addToCart(product);
+        addToCart(product, { silent: true });
     }
     toggleCart();
 };
 
-function addToCart(product) {
+// CORRIGIDO: agora respeita o limite de estoque do produto ao adicionar
+// ou incrementar um item já existente no carrinho. Antes disso não
+// existia nenhuma checagem aqui, então dava para adicionar quantas
+// unidades quisesse independente do que havia disponível.
+function addToCart(product, opts = {}) {
     const existing = cart.find(item => item.id === product.id);
+
     if (existing) {
+        if (existing.quantity >= product.stock) {
+            showToast('Quantidade máxima em estoque atingida!', '⚠️');
+            updateCartUI();
+            return;
+        }
         existing.quantity += 1;
     } else {
         cart.push({ ...product, quantity: 1 });
     }
+
     updateCartUI();
+
+    if (!opts.silent) {
+        showToast(`<strong>${product.name}</strong> adicionado!`, '🛒');
+    }
 }
 
 function updateCartUI() {
@@ -247,6 +301,16 @@ function updateCartUI() {
 
     cart.forEach(item => {
         totalPrice += item.price * item.quantity;
+
+        // CORRIGIDO: os IDs agora vêm do Firestore e são strings
+        // (ex: "aB3xY9k"), não números. Sem as aspas em volta de
+        // ${item.id}, o HTML gerado virava algo como
+        // onclick="increaseQuantity(aB3xY9k)" — o navegador tentava ler
+        // aB3xY9k como uma variável JS inexistente e a chamada falhava
+        // silenciosamente. Com produtos antigos de ID numérico (1, 2...)
+        // isso não dava erro, por isso funcionava antes.
+        const atMax = item.quantity >= item.stock;
+
         itemsContainer.innerHTML += `
             <div class="bg-slate-950 border border-slate-800 p-3 rounded-xl flex justify-between items-center">
                 <div>
@@ -254,10 +318,10 @@ function updateCartUI() {
                     <p class="text-xs text-blue-400 font-semibold mt-0.5">R$ ${item.price.toFixed(2).replace('.', ',')}</p>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button onclick="decreaseQuantity(${item.id})" class="bg-slate-800 hover:bg-slate-700 w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold text-slate-300">-</button>
+                    <button onclick="decreaseQuantity('${item.id}')" class="bg-slate-800 hover:bg-slate-700 w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold text-slate-300">-</button>
                     <span class="text-xs font-bold w-4 text-center">${item.quantity}</span>
-                    <button onclick="increaseQuantity(${item.id})" class="bg-slate-800 hover:bg-slate-700 w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold text-slate-300">+</button>
-                    <button onclick="removeItem(${item.id})" class="text-slate-500 hover:text-red-400 ml-2 text-xs">🗑️</button>
+                    <button onclick="increaseQuantity('${item.id}')" ${atMax ? 'disabled' : ''} class="bg-slate-800 hover:bg-slate-700 w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold text-slate-300 ${atMax ? 'opacity-40 cursor-not-allowed hover:bg-slate-800' : ''}">+</button>
+                    <button onclick="removeItem('${item.id}')" class="text-slate-500 hover:text-red-400 ml-2 text-xs">🗑️</button>
                 </div>
             </div>
         `;
@@ -266,9 +330,19 @@ function updateCartUI() {
     totalSpan.textContent = `R$ ${totalPrice.toFixed(2).replace('.', ',')}`;
 }
 
+// CORRIGIDO: comparação de string com string agora funciona porque o
+// onclick no HTML passa o ID entre aspas (veja updateCartUI acima).
 window.increaseQuantity = function(id) {
     const item = cart.find(i => i.id === id);
-    if (item) item.quantity++;
+    if (!item) return;
+
+    // CORRIGIDO: trava no limite do estoque em vez de incrementar sem fim.
+    if (item.quantity >= item.stock) {
+        showToast('Quantidade máxima em estoque atingida!', '⚠️');
+        return;
+    }
+
+    item.quantity++;
     updateCartUI();
 };
 

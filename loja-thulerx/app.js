@@ -319,7 +319,7 @@ function updateCartUI() {
                 </div>
                 <div class="flex items-center gap-2">
                     <button onclick="decreaseQuantity('${item.id}')" class="bg-slate-800 hover:bg-slate-700 w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold text-slate-300">-</button>
-                    <span class="text-xs font-bold w-4 text-center">${item.quantity}</span>
+                    <span class="text-xs font-bold w-4 text-center text-slate-200">${item.quantity}</span>
                     <button onclick="increaseQuantity('${item.id}')" ${atMax ? 'disabled' : ''} class="bg-slate-800 hover:bg-slate-700 w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold text-slate-300 ${atMax ? 'opacity-40 cursor-not-allowed hover:bg-slate-800' : ''}">+</button>
                     <button onclick="removeItem('${item.id}')" class="text-slate-500 hover:text-red-400 ml-2 text-xs">🗑️</button>
                 </div>

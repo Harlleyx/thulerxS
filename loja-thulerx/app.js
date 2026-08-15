@@ -17,37 +17,9 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 
-// Produtos com Estoque e Desconto
-const products = [
-    { id: 1, name: "Magma • Fisica", price: 1.00, oldPrice: null, category: "Frutas Fisicas", stock: 1, image: "/magma.png" },
-    { id: 2, name: "Light • Fisíca", price: 1.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/light.png" },
-    { id: 3, name: "Quake • Fisíca", price: 2.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/quake.png" },
-    { id: 4, name: "Buddha • Fisíca", price: 4.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/buddha.png" },
-    { id: 5, name: "Love • Fisíca", price: 2.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/love.png" },
-    { id: 6, name: "Creation • Fisíca", price: 4.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/creation.png" },
-    { id: 7, name: "Spider • Fisíca", price: 2.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/spider.png" },
-    { id: 8, name: "Sound • Fisíca", price: 4.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/sound.png" },
-    { id: 9, name: "Phoenix • Fisíca", price: 5.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/phoenix.png" },
-    { id: 10, name: "Portal • Fisíca", price: 5.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/portal.png" },
-    { id: 11, name: "Lightning • Fisíca", price: 5.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/lightning.png" },
-    { id: 12, name: "Pain • Fisíca", price: 3.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/pain.png" },
-    { id: 13, name: "Blizzard • Fisíca", price: 4.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/blizzard.png" },
-    { id: 14, name: "Gravity • Fisíca", price: 6.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/gravity.png" },
-    { id: 15, name: "Mammoth • Fisíca", price: 5.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/mammoth.png" },
-    { id: 16, name: "T-Rex • Fisíca", price: 6.50, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/trex.png" },
-    { id: 17, name: "Dough • Fisíca", price: 8.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/dough.png" },
-    { id: 18, name: "Shadow • Fisíca", price: 5.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/shadow.png" },
-    { id: 19, name: "Venom • Fisíca", price: 6.50, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/venom.png" },
-    { id: 20, name: "Gas • Fisíca", price: 8.50, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/gas.png" },
-    { id: 21, name: "Spirit • Fisíca", price: 7.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/spirit.png" },
-    { id: 22, name: "Tiger • Fisíca", price: 9.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/tiger.png" },
-    { id: 23, name: "Yeti • Fisíca", price: 7.50, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/yeti.png" },
-    { id: 24, name: "Kitisune • Fisíca", price: 15.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/kitsune.png" },
-    { id: 25, name: "Control • Fisíca", price: 15.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/control.png" },
-    { id: 26, name: "Dragon Eastern • Fisíca", price: 20.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/dragonE.png" },
-    { id: 27, name: "Dragon Western • Fisíca", price: 20.00, oldPrice: null, category: "Frutas Fisicas", stock: 0, image: "/dragonW.png" },
-
-];
+// Produtos: agora vêm do Firestore (coleção "products") em tempo real.
+// Essa lista começa vazia e é preenchida pela função loadProductsFromFirestore().
+let products = [];
 
 let cart = [];
 let currentCategory = 'todas';
@@ -59,8 +31,7 @@ let selectedRating = 5;
 
 // Inicialização da Vitrine
 document.addEventListener('DOMContentLoaded', () => {
-    renderCategories();
-    renderProducts();
+    loadProductsFromFirestore();
     updateCartUI();
     loadPublicReviews();
 
@@ -68,6 +39,27 @@ document.addEventListener('DOMContentLoaded', () => {
         reconnectExistingChat();
     }
 });
+
+// Escuta a coleção "products" no Firestore em tempo real.
+// Toda vez que o estoque mudar no banco (venda confirmada, ajuste manual
+// pela equipe, etc), a vitrine é re-renderizada automaticamente — sem
+// precisar editar código nem publicar nada de novo.
+function loadProductsFromFirestore() {
+    const productsRef = collection(db, "products");
+
+    onSnapshot(productsRef, (snapshot) => {
+        products = snapshot.docs.map(docSnap => ({
+            id: docSnap.id,
+            ...docSnap.data()
+        }));
+
+        renderCategories();
+        renderProducts();
+    }, (error) => {
+        console.error("Erro ao carregar produtos:", error);
+        showToast("Erro ao carregar produtos. Recarregue a página.", "❌");
+    });
+}
 
 // Toast / Notificações
 window.showToast = function(message, icon = '✅') {

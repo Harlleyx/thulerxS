@@ -199,7 +199,7 @@
                      Entregas e Suporte Prioritário via Pix
                 </span>
                 <h1 class="tx-hero-in tx-hero-d2 tx-display text-3xl md:text-3xl font-bold tracking-tight text-white leading-tight">
-                    “Tudo posso naquele que me fortalece.”
+                    "Tudo posso naquele que me fortalece."
                 </h1>
                 <p class="tx-hero-in tx-hero-d2 tx-tag text-blue-400 text-[20px] font-bold uppercase">  Filipenses 4:13</p>
                 <p class="tx-hero-in tx-hero-d3 text-xs md:text-sm font-bold text-white leading-relaxed">
@@ -232,10 +232,25 @@
                 </div>
             </div>
 
-        <!-- Filtros de Categoria -->
-        <div class="bg-slate-950/80 border-t border-slate-800/60 py-2.5 px-4 overflow-x-auto no-scrollbar">
-            <div id="category-filter" class="max-w-7xl mx-auto flex items-center gap-2">
-                <!-- Injetado via JS -->
+        <!-- Filtros de Categoria + Ordenação -->
+        <div class="bg-slate-950/80 border-t border-slate-800/60 py-2.5 px-4">
+            <div class="max-w-7xl mx-auto flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
+                <div id="category-filter" class="flex items-center gap-2 overflow-x-auto no-scrollbar">
+                    <!-- Injetado via JS -->
+                </div>
+
+                <!-- NOVO: Seletor de Ordenação -->
+                <select
+                    id="sort-select"
+                    onchange="handleSortChange(event)"
+                    class="shrink-0 bg-slate-800 border border-slate-700/60 text-slate-200 text-xs font-semibold rounded-full px-3.5 py-1.5 focus:outline-none focus:border-blue-500 transition cursor-pointer"
+                >
+                    <option value="default">Ordenar por</option>
+                    <option value="price-asc">Preço: menor para maior</option>
+                    <option value="price-desc">Preço: maior para menor</option>
+                    <option value="name-asc">Nome: A-Z</option>
+                    <option value="name-desc">Nome: Z-A</option>
+                </select>
             </div>
         </div>
 

@@ -40,67 +40,33 @@ document.addEventListener('DOMContentLoaded', () => {
     loadProductsFromFirestore();
     updateCartUI();
     loadPublicReviews();
-    updateStoreStatus(); // NOVO: horário de funcionamento
-    setInterval(updateStoreStatus, 60 * 1000); // NOVO: reavalia a cada minuto
+    loadStoreOpenStatus(); // NOVO: status Aberta/Fechada controlado pela equipe
 
     if (activeChatId) {
         reconnectExistingChat();
     }
 });
 
-// NOVO: horário de funcionamento da loja
-// Segunda a Sexta: 13:00–22:00 | Domingo: 08:00–22:00 | Sábado: fechado
-// Pausa para almoço todos os dias de funcionamento: 12:00–14:00
-function getStoreStatus() {
-    // Usa o horário de Brasília independente do fuso do visitante
-    const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
-    const day = now.getDay(); // 0 = domingo ... 6 = sábado
-    const minutes = now.getHours() * 60 + now.getMinutes();
-
-    const toMin = (h, m = 0) => h * 60 + m;
-    const lunchStart = toMin(12);
-    const lunchEnd = toMin(14);
-
-    let opensAt = null, closesAt = null;
-
-    if (day >= 1 && day <= 5) { // segunda a sexta
-        opensAt = toMin(13);
-        closesAt = toMin(22);
-    } else if (day === 0) { // domingo
-        opensAt = toMin(8);
-        closesAt = toMin(22);
-    } else { // sábado
-        return { open: false, reason: 'closed-day' };
-    }
-
-    if (minutes < opensAt || minutes >= closesAt) {
-        return { open: false, reason: 'outside-hours' };
-    }
-
-    if (minutes >= lunchStart && minutes < lunchEnd) {
-        return { open: false, reason: 'lunch' };
-    }
-
-    return { open: true };
-}
-
-function updateStoreStatus() {
+// NOVO: status "Loja Aberta" / "Loja Fechada" — agora é manual, controlado
+// pela equipe no painel (equipe.html). O site só escuta o documento
+// settings/store no Firestore em tempo real e atualiza o badge.
+function loadStoreOpenStatus() {
     const badge = document.getElementById('store-status-badge');
     if (!badge) return;
 
-    const status = getStoreStatus();
+    const statusRef = firestoreDoc(db, "settings", "store");
 
-    if (status.open) {
-        badge.textContent = 'Aberto agora';
-        badge.className = 'text-[10px] font-bold px-2.5 py-1 rounded-full border bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-        return;
-    }
+    onSnapshot(statusRef, (docSnap) => {
+        const isOpen = docSnap.exists() ? !!docSnap.data().isOpen : false;
 
-    let label = 'Fechado';
-    if (status.reason === 'lunch') label = 'Fechado (almoço)';
-
-    badge.textContent = label;
-    badge.className = 'text-[10px] font-bold px-2.5 py-1 rounded-full border bg-red-500/10 text-red-400 border-red-500/20';
+        if (isOpen) {
+            badge.textContent = 'Loja Aberta';
+            badge.className = 'text-[10px] font-bold px-2.5 py-1 rounded-full border bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+        } else {
+            badge.textContent = 'Loja Fechada';
+            badge.className = 'text-[10px] font-bold px-2.5 py-1 rounded-full border bg-red-500/10 text-red-400 border-red-500/20';
+        }
+    });
 }
 
 // Escuta a coleção "products" no Firestore em tempo real.

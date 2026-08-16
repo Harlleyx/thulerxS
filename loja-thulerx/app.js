@@ -30,6 +30,11 @@ let unsubscribeMessages = null;
 let chatStatusUnsubscribe = null;
 let selectedRating = 5;
 
+// NOVO: estado da paginação em loop das avaliações públicas
+let allPublicReviews = [];
+const REVIEWS_PER_PAGE = 6; // 2 linhas de 3 caixas
+let visibleReviewsCount = REVIEWS_PER_PAGE;
+
 // Inicialização da Vitrine
 document.addEventListener('DOMContentLoaded', () => {
     loadProductsFromFirestore();
@@ -772,48 +777,84 @@ window.submitClientReview = async function() {
     }
 };
 
+// ATUALIZADO: agora só escuta o Firestore e guarda a lista completa em
+// allPublicReviews. Quem desenha os cards na tela é renderPublicReviews(),
+// que respeita a paginação (visibleReviewsCount).
 function loadPublicReviews() {
     const reviewsRef = collection(db, "reviews");
     const q = query(reviewsRef, orderBy("timestamp", "desc"));
 
     onSnapshot(q, (snapshot) => {
-        const grid = document.getElementById('public-reviews-grid');
-        if (!grid) return;
-        
-        grid.innerHTML = '';
+        allPublicReviews = snapshot.docs.map(docSnap => docSnap.data());
 
-        if (snapshot.empty) {
-            grid.innerHTML = `<p class="text-xs text-slate-500 col-span-full text-center py-4">Nenhuma avaliação ainda. Seja o primeiro a comprar!</p>`;
-            return;
+        // Se a lista encolheu (ex: menos avaliações que antes), evita
+        // deixar "visibleReviewsCount" apontando pra além do necessário
+        // logo na primeira carga.
+        if (visibleReviewsCount < REVIEWS_PER_PAGE) {
+            visibleReviewsCount = REVIEWS_PER_PAGE;
         }
 
-        snapshot.forEach((docSnap) => {
-            const rev = docSnap.data();
-            const starsHTML = '★'.repeat(rev.rating) + '☆'.repeat(5 - rev.rating);
-            const initial = rev.clientName ? rev.clientName.charAt(0).toUpperCase() : 'C';
-            
-            grid.innerHTML += `
-                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg flex flex-col justify-between hover:border-slate-700 transition duration-300">
-                    <div>
-                        <div class="flex items-center justify-between mb-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold text-xs">
-                                    ${initial}
-                                </div>
-                                <div>
-                                    <h4 class="font-bold text-xs text-slate-100">${rev.clientName}</h4>
-                                    <span class="text-[10px] text-emerald-400 font-medium flex items-center gap-1">✓ Compra Verificada</span>
-                                </div>
-                            </div>
-                            <span class="text-amber-400 text-xs font-bold tracking-widest">${starsHTML}</span>
-                        </div>
-                        <p class="text-xs text-slate-300 leading-relaxed italic">"${rev.comment}"</p>
-                    </div>
-                </div>
-            `;
-        });
+        renderPublicReviews();
     });
 }
+
+// NOVO: desenha os cards de avaliação já carregados em allPublicReviews,
+// respeitando quantos devem estar visíveis (visibleReviewsCount).
+function renderPublicReviews() {
+    const grid = document.getElementById('public-reviews-grid');
+    const moreBtn = document.getElementById('load-more-reviews-btn');
+    if (!grid) return;
+
+    grid.innerHTML = '';
+
+    if (allPublicReviews.length === 0) {
+        grid.innerHTML = `<p class="text-xs text-slate-500 col-span-full text-center py-4">Nenhuma avaliação ainda. Seja o primeiro a comprar!</p>`;
+        if (moreBtn) moreBtn.classList.add('hidden');
+        return;
+    }
+
+    const countToShow = Math.min(visibleReviewsCount, Infinity);
+
+    for (let i = 0; i < countToShow; i++) {
+        // NOVO: usa módulo para reciclar as avaliações existentes — assim
+        // o "Ver mais avaliações" nunca acaba, fica em loop mostrando mais
+        // 2 linhas (6 cards) a cada clique.
+        const rev = allPublicReviews[i % allPublicReviews.length];
+        const starsHTML = '★'.repeat(rev.rating) + '☆'.repeat(5 - rev.rating);
+        const initial = rev.clientName ? rev.clientName.charAt(0).toUpperCase() : 'C';
+
+        grid.innerHTML += `
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg flex flex-col justify-between hover:border-slate-700 transition duration-300">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold text-xs">
+                                ${initial}
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-xs text-slate-100">${rev.clientName}</h4>
+                                <span class="text-[10px] text-emerald-400 font-medium flex items-center gap-1">✓ Compra Verificada</span>
+                            </div>
+                        </div>
+                        <span class="text-amber-400 text-xs font-bold tracking-widest">${starsHTML}</span>
+                    </div>
+                    <p class="text-xs text-slate-300 leading-relaxed italic">"${rev.comment}"</p>
+                </div>
+            </div>
+        `;
+    }
+
+    // Só mostra o botão se houver pelo menos uma avaliação real —
+    // com o loop, ele nunca precisa sumir depois disso.
+    if (moreBtn) moreBtn.classList.remove('hidden');
+}
+
+// NOVO: chamado pelo botão "Ver mais avaliações". Revela mais 2 linhas
+// (6 cards) a cada clique, reciclando a lista em loop infinito.
+window.loadMorePublicReviews = function() {
+    visibleReviewsCount += REVIEWS_PER_PAGE;
+    renderPublicReviews();
+};
 
 window.openProfileModal = async function() {
     const user = auth.currentUser;

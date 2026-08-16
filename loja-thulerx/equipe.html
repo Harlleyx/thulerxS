@@ -45,6 +45,15 @@
                 <p class="text-[10px] text-slate-400">Logado como: <span id="logged-user-email" class="text-slate-200"></span></p>
             </div>
             <div class="flex items-center gap-2">
+                <!-- NOVO: toggle de status da loja (Aberta/Fechada) -->
+                <button
+                    id="store-status-toggle"
+                    onclick="toggleStoreStatus()"
+                    class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border transition bg-slate-800 border-slate-700 text-slate-300"
+                >
+                    <span id="store-status-dot" class="w-2 h-2 rounded-full bg-slate-500"></span>
+                    <span id="store-status-text">Carregando...</span>
+                </button>
                 <button onclick="logoutTeam()" class="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 px-3 py-1.5 rounded-lg text-xs font-semibold transition">Sair</button>
             </div>
         </header>
@@ -133,6 +142,8 @@
         let teamUnsubscribeMessages = null;
         let chatsUnsubscribe = null;
         let teamChatUnsubscribe = null;
+        let storeStatusUnsubscribe = null; // NOVO
+        let currentStoreOpen = false; // NOVO
 
         onAuthStateChanged(auth, async (user) => {
             const loginScreen = document.getElementById('login-screen');
@@ -150,6 +161,7 @@
 
                     loadActiveChatsList();
                     loadTeamChat();
+                    loadStoreStatus(); // NOVO
                 } else {
                     alert(`Acesso Negado: A conta (${user.email}) não possui permissão para acessar o Painel.`);
                     await signOut(auth);
@@ -176,9 +188,54 @@
                 if (chatsUnsubscribe) chatsUnsubscribe();
                 if (teamUnsubscribeMessages) teamUnsubscribeMessages();
                 if (teamChatUnsubscribe) teamChatUnsubscribe();
+                if (storeStatusUnsubscribe) storeStatusUnsubscribe(); // NOVO
                 await signOut(auth);
             } catch (error) {
                 console.error("Erro ao sair:", error);
+            }
+        };
+
+        // ==========================================
+        // NOVO: STATUS DA LOJA (Aberta / Fechada)
+        // ==========================================
+        // Lê e escreve em settings/store no Firestore. O site (index.html
+        // + app.js) escuta esse mesmo documento em tempo real, então
+        // assim que a equipe clica aqui, o badge no site já atualiza.
+        function loadStoreStatus() {
+            const statusRef = doc(db, "settings", "store");
+
+            if (storeStatusUnsubscribe) storeStatusUnsubscribe();
+
+            storeStatusUnsubscribe = onSnapshot(statusRef, (docSnap) => {
+                currentStoreOpen = docSnap.exists() ? !!docSnap.data().isOpen : false;
+                renderStoreStatusButton();
+            });
+        }
+
+        function renderStoreStatusButton() {
+            const btn = document.getElementById('store-status-toggle');
+            const dot = document.getElementById('store-status-dot');
+            const text = document.getElementById('store-status-text');
+            if (!btn || !dot || !text) return;
+
+            if (currentStoreOpen) {
+                btn.className = 'flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border transition bg-emerald-600/20 hover:bg-emerald-600/30 border-emerald-500/40 text-emerald-400';
+                dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+                text.textContent = 'Loja Aberta';
+            } else {
+                btn.className = 'flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border transition bg-red-600/20 hover:bg-red-600/30 border-red-500/40 text-red-400';
+                dot.className = 'w-2 h-2 rounded-full bg-red-400';
+                text.textContent = 'Loja Fechada';
+            }
+        }
+
+        // Clique no botão: inverte o status atual e salva no Firestore
+        window.toggleStoreStatus = async function() {
+            try {
+                await setDoc(doc(db, "settings", "store"), { isOpen: !currentStoreOpen }, { merge: true });
+            } catch (error) {
+                console.error("Erro ao atualizar status da loja:", error);
+                alert("Erro ao atualizar status da loja.");
             }
         };
 

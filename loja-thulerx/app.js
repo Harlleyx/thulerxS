@@ -54,7 +54,7 @@ function loadStoreOpenStatus() {
     const badge = document.getElementById('store-status-badge');
     if (!badge) return;
 
-    const statusRef = firestoreDoc(db, "settings", "store");
+    const statusRef = firestoreDoc(db, "system_settings", "store_status");
 
     onSnapshot(statusRef, (docSnap) => {
         const isOpen = docSnap.exists() ? !!docSnap.data().isOpen : false;
@@ -66,6 +66,10 @@ function loadStoreOpenStatus() {
             badge.textContent = 'Loja Fechada';
             badge.className = 'text-[10px] font-bold px-2.5 py-1 rounded-full border bg-red-500/10 text-red-400 border-red-500/20';
         }
+    }, (error) => {
+        console.error("Erro ao carregar status da loja (verifique as regras do Firestore para 'settings'):", error);
+        badge.textContent = 'Loja Fechada';
+        badge.className = 'text-[10px] font-bold px-2.5 py-1 rounded-full border bg-red-500/10 text-red-400 border-red-500/20';
     });
 }
 

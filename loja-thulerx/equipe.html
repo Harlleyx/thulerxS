@@ -202,13 +202,21 @@
         // + app.js) escuta esse mesmo documento em tempo real, então
         // assim que a equipe clica aqui, o badge no site já atualiza.
         function loadStoreStatus() {
-            const statusRef = doc(db, "settings", "store");
+            const statusRef = doc(db, "system_settings", "store_status");
 
             if (storeStatusUnsubscribe) storeStatusUnsubscribe();
 
             storeStatusUnsubscribe = onSnapshot(statusRef, (docSnap) => {
                 currentStoreOpen = docSnap.exists() ? !!docSnap.data().isOpen : false;
                 renderStoreStatusButton();
+            }, (error) => {
+                console.error("Erro ao carregar status da loja (verifique as regras do Firestore para 'settings'):", error);
+                const btn = document.getElementById('store-status-toggle');
+                const dot = document.getElementById('store-status-dot');
+                const text = document.getElementById('store-status-text');
+                if (btn) btn.className = 'flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border transition bg-slate-800 border-slate-700 text-slate-400';
+                if (dot) dot.className = 'w-2 h-2 rounded-full bg-slate-500';
+                if (text) text.textContent = 'Erro ao carregar';
             });
         }
 
@@ -232,7 +240,7 @@
         // Clique no botão: inverte o status atual e salva no Firestore
         window.toggleStoreStatus = async function() {
             try {
-                await setDoc(doc(db, "settings", "store"), { isOpen: !currentStoreOpen }, { merge: true });
+                await setDoc(doc(db, "system_settings", "store_status"), { isOpen: !currentStoreOpen }, { merge: true });
             } catch (error) {
                 console.error("Erro ao atualizar status da loja:", error);
                 alert("Erro ao atualizar status da loja.");

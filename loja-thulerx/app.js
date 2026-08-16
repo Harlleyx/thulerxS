@@ -813,13 +813,11 @@ function renderPublicReviews() {
         return;
     }
 
-    const countToShow = Math.min(visibleReviewsCount, Infinity);
+    // NOVO: nunca mostra além do total real de avaliações — sem repetir.
+    const countToShow = Math.min(visibleReviewsCount, allPublicReviews.length);
 
     for (let i = 0; i < countToShow; i++) {
-        // NOVO: usa módulo para reciclar as avaliações existentes — assim
-        // o "Ver mais avaliações" nunca acaba, fica em loop mostrando mais
-        // 2 linhas (6 cards) a cada clique.
-        const rev = allPublicReviews[i % allPublicReviews.length];
+        const rev = allPublicReviews[i];
         const starsHTML = '★'.repeat(rev.rating) + '☆'.repeat(5 - rev.rating);
         const initial = rev.clientName ? rev.clientName.charAt(0).toUpperCase() : 'C';
 
@@ -844,13 +842,15 @@ function renderPublicReviews() {
         `;
     }
 
-    // Só mostra o botão se houver pelo menos uma avaliação real —
-    // com o loop, ele nunca precisa sumir depois disso.
-    if (moreBtn) moreBtn.classList.remove('hidden');
+    // NOVO: só mostra o botão se ainda existirem avaliações não exibidas.
+    // Quando todas já estão na tela, o botão some.
+    if (moreBtn) {
+        moreBtn.classList.toggle('hidden', visibleReviewsCount >= allPublicReviews.length);
+    }
 }
 
 // NOVO: chamado pelo botão "Ver mais avaliações". Revela mais 2 linhas
-// (6 cards) a cada clique, reciclando a lista em loop infinito.
+// (6 cards) a cada clique, até acabarem as avaliações reais — sem repetir.
 window.loadMorePublicReviews = function() {
     visibleReviewsCount += REVIEWS_PER_PAGE;
     renderPublicReviews();

@@ -35,6 +35,10 @@ let allPublicReviews = [];
 const REVIEWS_PER_PAGE = 6; // 2 linhas de 3 caixas
 let visibleReviewsCount = REVIEWS_PER_PAGE;
 
+// NOVO: status atual da loja (Aberta/Fechada), controlado pela equipe.
+// Usado para bloquear compras quando a loja estiver fechada.
+let storeIsOpen = true;
+
 // Inicialização da Vitrine
 document.addEventListener('DOMContentLoaded', () => {
     loadProductsFromFirestore();
@@ -58,6 +62,7 @@ function loadStoreOpenStatus() {
 
     onSnapshot(statusRef, (docSnap) => {
         const isOpen = docSnap.exists() ? !!docSnap.data().isOpen : false;
+        storeIsOpen = isOpen; // NOVO: guarda o estado pra bloquear compras
 
         if (isOpen) {
             badge.textContent = 'Loja Aberta';
@@ -66,10 +71,14 @@ function loadStoreOpenStatus() {
             badge.textContent = 'Loja Fechada';
             badge.className = 'text-[10px] font-bold px-2.5 py-1 rounded-full border bg-red-500/10 text-red-400 border-red-500/20';
         }
+
+        renderProducts(); // NOVO: atualiza os botões "Comprar" com o novo status
     }, (error) => {
-        console.error("Erro ao carregar status da loja (verifique as regras do Firestore para 'settings'):", error);
+        console.error("Erro ao carregar status da loja (verifique as regras do Firestore para 'system_settings'):", error);
+        storeIsOpen = false; // NOVO: por segurança, bloqueia compras se não conseguir confirmar o status
         badge.textContent = 'Loja Fechada';
         badge.className = 'text-[10px] font-bold px-2.5 py-1 rounded-full border bg-red-500/10 text-red-400 border-red-500/20';
+        renderProducts();
     });
 }
 
@@ -250,6 +259,9 @@ function renderProducts() {
 
     filtered.forEach(product => {
         const discountPercentage = product.oldPrice ? Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100) : 0;
+        // NOVO: produto esgotado OU loja fechada -> compra bloqueada
+        const isBlocked = product.stock === 0 || !storeIsOpen;
+        const blockedLabel = product.stock === 0 ? 'Esgotado' : 'Loja Fechada';
 
         grid.innerHTML += `
             <div class="group bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300">
@@ -282,17 +294,17 @@ function renderProducts() {
 <div class="grid grid-cols-[auto_1fr] gap-2 mt-4">
 <button
     onclick='handleAddToCart(${JSON.stringify(product)})'
-    ${product.stock === 0 ? 'disabled' : ''}
-    class="bg-slate-800 hover:bg-slate-700 w-12 h-12 rounded-xl flex items-center justify-center transition ${product.stock === 0 ? 'opacity-40 cursor-not-allowed hover:bg-slate-800' : ''}"
+    ${isBlocked ? 'disabled' : ''}
+    class="bg-slate-800 hover:bg-slate-700 w-12 h-12 rounded-xl flex items-center justify-center transition ${isBlocked ? 'opacity-40 cursor-not-allowed hover:bg-slate-800' : ''}"
 >
     <img src="/addcart.png" width="20" height="20" />
 </button>
 <button
-    onclick='${product.stock === 0 ? '' : `handleBuy(${JSON.stringify(product)})`}'
-    ${product.stock === 0 ? 'disabled' : ''}
-    class="${product.stock === 0 ? 'bg-slate-700 cursor-not-allowed opacity-50' : 'bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-600/20'} text-white text-sm py-3 px-4 rounded-xl font-semibold transition text-center"
+    onclick='${isBlocked ? '' : `handleBuy(${JSON.stringify(product)})`}'
+    ${isBlocked ? 'disabled' : ''}
+    class="${isBlocked ? 'bg-slate-700 cursor-not-allowed opacity-50' : 'bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-600/20'} text-white text-sm py-3 px-4 rounded-xl font-semibold transition text-center"
 >
-    ${product.stock === 0 ? 'Esgotado' : 'Comprar'}
+    ${isBlocked ? blockedLabel : 'Comprar'}
 </button>
 </div>
             </div>

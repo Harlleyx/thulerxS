@@ -193,6 +193,22 @@
             <div class="absolute -right-12 -bottom-12 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
         </section>
 
+        <!-- Horário de Funcionamento -->
+        <section id="store-hours" class="bg-slate-900 border border-slate-800 rounded-2xl p-5 md:p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <div class="flex items-center gap-2.5 mb-2">
+                    <h3 class="text-sm font-bold text-slate-100 uppercase tracking-wider">Horário de Funcionamento</h3>
+                    <span id="store-status-badge" class="text-[10px] font-bold px-2.5 py-1 rounded-full border">—</span>
+                </div>
+                <ul class="text-xs text-slate-400 space-y-0.5">
+                    <li><span class="text-slate-300 font-medium">Segunda a Sexta:</span> 13:00 às 22:00</li>
+                    <li><span class="text-slate-300 font-medium">Domingo:</span> 08:00 às 22:00</li>
+                    <li><span class="text-slate-300 font-medium">Sábado:</span> Fechado</li>
+                    <li class="pt-1 text-slate-500">Pausa para almoço: 12:00 às 14:00</li>
+                </ul>
+            </div>
+        </section>
+
         <!-- Busca no Mobile -->
         <div class="sm:hidden">
             <input type="text" oninput="handleSearch(event)" placeholder="Buscar produtos..." class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500">

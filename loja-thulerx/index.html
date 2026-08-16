@@ -242,6 +242,18 @@
             <div id="public-reviews-grid" class="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <!-- Preenchido via JS -->
             </div>
+
+            <!-- NOVO: Botão "Ver mais avaliações" — carrega mais 2 linhas (6 cards)
+                 a cada clique, em loop pelas avaliações existentes -->
+            <div class="flex justify-center pt-2">
+                <button
+                    id="load-more-reviews-btn"
+                    onclick="loadMorePublicReviews()"
+                    class="hidden bg-slate-800 hover:bg-slate-700 border border-slate-700/60 text-slate-200 text-xs font-semibold px-6 py-2.5 rounded-xl transition"
+                >
+                    Ver mais avaliações
+                </button>
+            </div>
         </section>
     </main>
 
